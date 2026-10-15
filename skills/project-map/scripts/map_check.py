@@ -56,7 +56,7 @@ def run_git(repo: Path, args):
 
 def _clean(val: str) -> str:
     """Strip trailing inline '#' comments and surrounding quotes from a value."""
-    val = re.split(r"\s+#", val, 1)[0].strip()
+    val = re.split(r"\s+#", val, maxsplit=1)[0].strip()
     if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
         val = val[1:-1]
     return val
