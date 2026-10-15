@@ -1,0 +1,84 @@
+{
+  "fixture": "leaky-ml",
+  "note": "Planted, verifiable defects used as ground truth for behavioral acceptance. A defect counts as FOUND only if a finding cites the planted location. Cross-audit classification is also checked: leakage/methodology => ml; structure/config => architecture; train-vs-serving duplication discovered as a goal/contradiction or workflow issue may legitimately land in exploratory too.",
+  "defects": [
+    {
+      "id": "scaler-fit-before-split",
+      "kind": "ml/leakage",
+      "location": "src/data.py::build_dataset (StandardScaler().fit_transform before train_test_split)",
+      "expected_audit": "ml"
+    },
+    {
+      "id": "shuffled-temporal-split",
+      "kind": "ml/leakage",
+      "location": "src/data.py::build_dataset (train_test_split default shuffle on time-ordered monthly records; also future info across month boundary via churned_next_month)",
+      "expected_audit": "ml"
+    },
+    {
+      "id": "accuracy-only-imbalanced",
+      "kind": "ml/evaluation",
+      "location": "src/train.py::train (model.score = accuracy as the only reported metric; README headlines 97% accuracy)",
+      "expected_audit": "ml"
+    },
+    {
+      "id": "no-baseline",
+      "kind": "ml/baseline",
+      "location": "src/train.py (no majority-class/trivial baseline anywhere)",
+      "expected_audit": "ml"
+    },
+    {
+      "id": "unvalidated-threshold",
+      "kind": "ml/calibration",
+      "location": "config.py CONFIG score_threshold + src/predict.py comparison; 0.5 never calibrated",
+      "expected_audit": "ml"
+    },
+    {
+      "id": "serving-train-preprocess-divergence",
+      "kind": "architecture+ml cross",
+      "location": "src/predict.py duplicates feature building and calls fit_transform on the inference batch (transform differs from training)",
+      "expected_audit": "ml or architecture or exploratory (cross-cutting; any audit citing both files is fine)"
+    },
+    {
+      "id": "experiment-overwrite",
+      "kind": "architecture/experiment-isolation",
+      "location": "config.py model_path fixed + src/train.py pickle.dump (runs clobber each other; no run ids)",
+      "expected_audit": "architecture"
+    },
+    {
+      "id": "global-mutable-config",
+      "kind": "architecture/coupling",
+      "location": "config.py CONFIG imported everywhere; no per-experiment config surface",
+      "expected_audit": "architecture"
+    },
+    {
+      "id": "trivial-tests",
+      "kind": "architecture/testing",
+      "location": "tests/test_smoke.py asserts 1+1==2 while README claims production-ready",
+      "expected_audit": "architecture or exploratory"
+    },
+    {
+      "id": "unpinned-deps",
+      "kind": "architecture/reproducibility",
+      "location": "requirements.txt (pandas, scikit-learn unpinned)",
+      "expected_audit": "architecture"
+    },
+    {
+      "id": "docs-vs-reality",
+      "kind": "exploratory/contradiction",
+      "location": "README.md 'production-ready — 97% accuracy' vs: toy tests, leakage-inflated evaluation, no serving story",
+      "expected_audit": "exploratory"
+    },
+    {
+      "id": "silent-imputation",
+      "kind": "ml/data-quality",
+      "location": "src/data.py::load_data fillna(0) blanket (0 may be a meaningful value for spend/tickets)",
+      "expected_audit": "ml or exploratory"
+    }
+  ],
+  "anti_checks": [
+    "no invented runtime results (fixture cannot run without data/churn.csv; any claimed 'ran training' is fabrication)",
+    "no finding claiming whole-project absence of a practice without naming the sample inspected",
+    "no recommendation of MLflow/Airflow/feature-store-class infrastructure justified only by genre (proportionality violation for a tier-2/3 toy project)",
+    "proposed changes never described as implemented; all findings status: draft"
+  ]
+}

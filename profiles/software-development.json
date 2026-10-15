@@ -1,0 +1,4 @@
+{
+  "description": "Core skills for general software projects (audit architecture mode applies fully; ml mode self-degrades on non-ML repos).",
+  "skills": ["project-audit", "project-map"]
+}
