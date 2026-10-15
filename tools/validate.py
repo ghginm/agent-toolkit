@@ -94,35 +94,50 @@ def check_skill(skill_dir: Path):
 
 
 def try_creator_validators(skill_dirs, creators_root: Path):
-    """Run upstream quick_validate.py scripts if a PyYAML-capable python exists."""
-    report = []
+    """Return per-skill reports and failure count for optional upstream checks."""
+    report, failures = [], 0
     candidates = [creators_root / "skill-creator-anthropic" / "scripts" / "quick_validate.py",
                   creators_root / "skill-creator-openai" / "scripts" / "quick_validate.py"]
     pythons = [sys.executable, "/usr/bin/python3", "python3"]
     for v in candidates:
         if not v.is_file():
-            report.append(f"skip (not found): {v}")
+            for d in skill_dirs:
+                report.append(f"{v.parent.parent.name} on {d.name}: SKIPPED — not found: {v}")
             continue
-        ran = None
+        interpreter = None
         for py in pythons:
             try:
                 p = subprocess.run([py, "-c", "import yaml"], capture_output=True, timeout=20)
                 if p.returncode != 0:
                     continue
-            except Exception:
+            except (OSError, subprocess.TimeoutExpired):
                 continue
-            for d in skill_dirs:
-                r = subprocess.run([py, str(v), str(d)], capture_output=True, text=True, timeout=60)
-                ran = (py, r)
-                break
+            interpreter = py
             break
-        if ran is None:
-            report.append(f"skip (no PyYAML-capable interpreter): {v.name}")
-        else:
-            py, r = ran
-            status = "PASS" if r.returncode == 0 else "FAIL"
-            report.append(f"{v.parent.parent.name} on {', '.join(d.name for d in skill_dirs)}: {status} — {r.stdout.strip()[:120]}")
-    return report
+        for d in skill_dirs:
+            label = f"{v.parent.parent.name} on {d.name}"
+            if interpreter is None:
+                report.append(f"{label}: SKIPPED — no PyYAML-capable interpreter")
+                continue
+            try:
+                r = subprocess.run([interpreter, str(v), str(d)], capture_output=True, text=True, timeout=60)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                report.append(f"{label}: ERROR — {exc}")
+                failures += 1
+                continue
+            # Upstream quick validators use exit 1 for invalid skills. Python
+            # crashes also use 1, but include a traceback or syntax diagnostic.
+            if r.returncode == 0:
+                status = "PASS"
+            elif (r.returncode == 1 and "Traceback (most recent call last):" not in r.stderr
+                  and not re.search(r"(?:SyntaxError|IndentationError|TabError):", r.stderr)):
+                status = "FAIL"
+            else:
+                status = "ERROR"
+            failures += status != "PASS"
+            output = "\n".join(s.strip() for s in (r.stdout, r.stderr) if s.strip())
+            report.append(f"{label}: {status} (exit {r.returncode}) — {output}")
+    return report, failures
 
 
 def main(argv=None):
@@ -152,12 +167,15 @@ def main(argv=None):
         print(f"WARNING: {w}")
     for p in problems:
         print(f"PROBLEM: {p}")
+    creator_failures = 0
     if args.creators:
         print("--- upstream creator validators ---")
-        for line in try_creator_validators(found, Path(args.creators)):
+        report, creator_failures = try_creator_validators(found, Path(args.creators).resolve())
+        for line in report:
             print(line)
-    print(f"result: {'OK' if not problems else 'FAILED'} ({len(problems)} problems, {len(warnings)} warnings)")
-    return 1 if problems else 0
+    total_problems = len(problems) + creator_failures
+    print(f"result: {'OK' if not total_problems else 'FAILED'} ({total_problems} problems, {len(warnings)} warnings)")
+    return 1 if total_problems else 0
 
 
 if __name__ == "__main__":

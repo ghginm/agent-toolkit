@@ -13,6 +13,20 @@ Maintain a navigable, source-cited map of a repository under `.agent/project-map
 
 The map's cardinal rule: it is a claim about the code at a revision, never the authority on the code. Even a fresh card can be incomplete or wrong — the implementing agent must still read the touched source and its callers.
 
+Installing this skill alone does not guarantee routine map consultation. Use appropriate project agent instructions (the L0 pointer below) or explicit skill invocation; discovery and automatic invocation depend on the harness.
+
+## Bundled command paths
+
+Set `PROJECT` to the absolute root of the actual target project. Set `MAP_SKILL_DIR` to the absolute parent directory of this installed skill's `SKILL.md`, using the skill location supplied in agent context — never infer it from the current working directory or use toolkit `tools/`. For example, if the target is `/work/my-project` and that context locates the skill at `/work/my-project/.agents/skills/project-map/SKILL.md`:
+
+```sh
+PROJECT="/work/my-project"
+MAP_SKILL_DIR="/work/my-project/.agents/skills/project-map"
+python "$MAP_SKILL_DIR/scripts/map_check.py" --repo "$PROJECT" --map-dir "$PROJECT/.agent/project-map"
+```
+
+Replace both example paths with the actual locations. `.agents/skills/` is only one installation layout; user-level, other harness, and manual locations work too. The skill directory need not be inside `PROJECT`. Use these absolute variables and both explicit target flags for every invocation, regardless of current working directory.
+
 ## Workflow selection
 
 | Situation | Workflow |
@@ -84,7 +98,7 @@ Route should cut full-repo re-exploration, not replace the few targeted reads st
 
 Incremental and change-driven — a full regeneration per commit defeats the purpose. Procedure and the update-policy table: `references/workflows.md §2–§3`. The two rules that survive compression:
 
-- Candidates come from `scripts/map_check.py --affected --working` / `--rev <baseline>` / `--files ...` — and are only candidates: you must additionally trace importers/callers of changed interfaces and add their cards. No git: ask the user for scope or use judgment.
+- Candidates come from the affected-card commands in `references/workflows.md §2` — and are only candidates: you must additionally trace importers/callers of changed interfaces and add their cards. No git: ask the user for scope or use judgment.
 - Touch a card only when its useful facts changed; never rewrite unrelated cards to refresh metadata.
 
 ## validate
@@ -105,5 +119,5 @@ Two layers, never claiming the second from the first (detail: `references/workfl
 
 - `references/map-format.md` — card anatomy and metadata semantics, level-by-level content requirements, anti-patterns. Read before authoring cards.
 - `references/workflows.md` — full create/update/validate procedures, update-policy table, drift recovery, non-git handling. Read when running `create`, or when `update`/`validate` hits an edge case.
-- `scripts/map_check.py` — deterministic reference & freshness checks (stdlib Python): `map_check.py [--map-dir D] [--repo R] [--json]` and `map_check.py --affected (--working | --rev SHA | --files p...)`. Used by create (finish-line), validate (layer 1), update (candidates).
+- `scripts/map_check.py` — deterministic reference & freshness checks (stdlib Python). Use the absolute command above; add `--json` for structured output or the affected-card options in `references/workflows.md §2`. Used by create (finish-line), validate (layer 1), update (candidates).
 - `assets/l1-index-template.md`, `assets/l2-module-template.md`, `assets/l3-capability-template.md`, `assets/bootstrap-snippet.md` — copy-and-fill skeletons for the level being written.

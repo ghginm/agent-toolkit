@@ -1,79 +1,117 @@
-# Architecture & Design Decisions
+# Architecture
 
-What this toolkit is, what it deliberately is not, and why.
+The toolkit is a general-purpose library of independent Agent Skills, not an
+agent runtime. Filesystem conventions and small deterministic tools handle
+packaging; agents perform the workflows and semantic judgment.
 
-## Goals (from the product brief)
+## Responsibilities
 
-Quality agent behavior — discovery, evidence discipline, proportional depth, incremental maintenance — with the smallest possible technical footprint, portable across harnesses, extensible to unrelated skills without framework work.
-
-## Repository shape
-
-```
-skills/     canonical skill implementations (self-contained installable units)
-tools/      developer tools only: validate.py, install.py, skillkit.py (helper)
-profiles/   JSON skill-lists for convenient installs
-tests/      unit tests, fixtures, behavioral acceptance evidence
-docs/       this architecture, installation, contributing
-```
-
-`skills/` is canonical; there are no per-harness copies. `tools/` is NOT a runtime dependency of any skill: skills that ship scripts (`project-map/scripts/map_check.py`) bundle them, so a lone copied skill still works. This is the load-bearing rule behind every "independent installability" claim.
-
-## Discovery over registry
-
-Adding a skill = creating `skills/new-skill/SKILL.md`. `tools/skillkit.py::discover` scans directories; validator and installer read each skill's own frontmatter. No file elsewhere needs editing. (Verified in tests: `mini-skill` fixture installs through the same code path.)
-
-## Shared conventions are duplicated, not centralized (decision)
-
-`project-audit` and `project-map` use compatible contracts:
-
-- Evidence statuses (shared core): `verified-static`, `verified-executed`, `inferred`, `proposed`. Each skill adds exactly one status for its own object type — `unknown` in audits (a claim that can't be verified in scope), `stale` in maps (a document known to have drifted) — and says so where defined.
-- Source citations: `path::symbol` / `path:line`; runtime = command + result.
-- Artifact root `.agent/` (`audits/<run-id>/`, `project-map/`).
-- Current-state vs proposed-state separation; lifecycle `draft → reviewed → accepted/deferred/rejected → implemented-verified`.
-- Finding IDs `AUD-<mode>-NNN` referenced from map cards' *proposed direction* sections when both skills are present.
-
-The brief's two options were a shared contract file or matching embedded conventions. We embed and duplicate (each ~15 lines inside each SKILL.md) because a shared runtime file would create the fragile cross-skill dependency the brief forbids, while duplicated small conventions survive independent installation. Drift risk between the two copies is managed by a sync-check rule in AGENTS.md/contributing. The interlinking that does exist (map helps audits; audits feed map's proposed-direction sections) is opportunistic and degrades silently when the other skill/artifacts are absent.
-
-## Scripts: four total, chosen for determinism (and deliberate non-scripting)
-
-| Script | Why it earns its keep |
+| Location | Responsibility |
 |---|---|
-| `skills/project-map/scripts/map_check.py` | mechanical path/link/metadata/freshness checking: deterministic, repeated every create/update/validate, cheaper and more reliable than agent eyeballing; stdlib-only; degrades gracefully without git. |
-| `skills/project-audit/scripts/check_report.py` | mechanical report-contract checking (cited paths exist, finding IDs/fields complete, report set matches modes, template leftovers absent) — added after creator review flagged the degrees-of-freedom asymmetry: the audit's trust-critical consistency checks were prose-only. |
-| `tools/validate.py` | repo developer tool: spec frontmatter + reference integrity across all skills; optionally delegates to upstream creator validators. |
-| `tools/install.py` | copy + collision-safe update + lock fingerprint; cross-platform filesystem work agents shouldn't improvise per install. |
+| `skills/<name>/` | Canonical installable unit: `SKILL.md` and its own resources |
+| `policies/*.md` | Optional project-level instructions, manually incorporated; no runtime enforcement or profile installation |
+| `tools/skillkit.py` | Development-only discovery, metadata parsing, fingerprints |
+| `tools/validate.py` | Metadata and local-reference validation; optional creator checks |
+| `tools/install.py` | Skill selection, validation, copying, update safety, destination reporting |
+| `profiles/*.json` | Optional named collections with a `skills` list |
+| `tests/` | Unit regressions, fixtures, and existing acceptance evidence |
+| `docs/` | Repository usage and contributor contracts, not skill runtime resources |
 
-Deliberately NOT scripted: audit analysis, map card authoring, dependency judgment, update-policy decisions — semantic work that belongs to the agent (script selection principle §15.4). No git-changes helper as a fourth script: `map_check.py --affected` subsumes change detection with the same stdlib git plumbing calls — splitting them would duplicate a third of each file for no benefit (documented simplification).
+There is one canonical source tree, not separate content per harness. An
+installed skill must not import `tools/`, read sibling skills, or require this
+checkout. Bundle deterministic helpers in that skill's own `scripts/`; keep
+Python dependencies in the standard library. Project artifacts are outputs,
+not toolkit dependencies, and remain in the project when skills are removed.
 
-## Provenance / update model (intentionally minimal, not a package manager)
+| Kind | Examples | Persistence / activation |
+|---|---|---|
+| Independent skill | `project-audit`, `project-map`, `agent-efficiency`, `tidy-dev` | Installed individually; invoked for relevant tasks, not continuously |
+| Optional policy | `policies/focused-changes.md` | User opts into existing project instructions; no third skill |
+| Generated project artifact | Audit reports, map cards, authorized reusable commands | Lives in the target project; ordinary efficiency/tidy assessments need no saved report |
 
-The installer keeps one lock file per destination (`agent-toolkit.lock.json`, content sha256 per skill + install timestamp + harness/scope). That's the whole system, enough to distinguish: not installed / unchanged / ours-but-source-updated (silently replaced) / user-modified (skipped + warned; `--force` replaces the entire skill dir and says so). No version resolution, no uninstall dependencies, no registry.
+The new workflow skills contain only `SKILL.md`: no detailed reference catalog
+or deterministic runtime helper is needed. Profiles remain audit/map collections.
+`tidy-dev` uses the structural/behavioral distinction discussed in Kent Beck's
+*Tidy First?* and reviewed in [dtun/tidy-first](https://github.com/dtun/tidy-first).
+Its instructions are independently written, not copied upstream text or code;
+it omits mandatory handoffs/commit formats and does not treat passing tests as
+proof of complete behavioral equivalence. The reviewed upstream material is
+MIT-licensed, copyright 2026 Danny Tunney; no upstream runtime files are bundled.
 
-## Harness portability (decision)
+## Discovery and extension
 
-- Content: markdown + stdlib python + git-if-available; no tool names, no harness features. `compatibility:` frontmatter intentionally unused (none needed).
-- `agents/openai.yaml` (recommended by OpenAI's creator for Codex UI chips) was dropped from shipped skills: it is harness-specific presentation metadata whose generator lives upstream; skills stay neutral and Codex works from spec frontmatter alone. Anyone who wants Codex chips regenerates deterministically: `python /path/to/skill-creator-openai/scripts/generate_openai_yaml.py <skill-dir> --interface ...` at the install destination. This is "harness adaptation as a thin layer", not a skill-content fork.
-- Destination map is a plain dict in `install.py` — data, not abstraction. Unknown/new harness → documented manual route (copy the skill dir). Adding one is a one-line dict entry plus a docs row; no adapter framework.
-- Windows: copies only (no symlinks), pathlib throughout; live Windows smoke left to users (documented procedure in installation.md) since the dev environment is Linux/WSL.
+`skillkit.discover` scans `skills/*/SKILL.md`. The installer and validator use
+that scan rather than a registry or hard-coded skill catalog. A new skill needs
+its own directory and metadata; add a profile entry only when it belongs to a
+collection. The `mini-skill` fixture tests discovery beyond the current catalog.
 
-## What was NOT built (per the brief's anti-goals)
+Keep `SKILL.md` focused on workflow and resource routing. Put detailed methods
+in `references/`, templates in `assets/`, and repeated mechanical checks in
+`scripts/`. A checker can establish structural consistency, not the truth of an
+agent's analysis. The current skills bundle map and audit report checkers;
+semantic analysis remains agent work.
 
-No orchestration, embeddings/vector stores, dependency-graph DB, custom skill runtime, MCP servers, dashboards, background sync, mandatory hooks, AST indexing, approval UI, config sprawl. The one persistence mechanism (lock file) and one artifact convention (`.agent/`) are the entire "infrastructure."
+## Installation and update model
 
-## Creator-guidance reconciliation (Anthropic vs OpenAI skill-creators)
+The installer resolves a destination from harness and scope, validates selected
+skills, and copies whole directories without symlinks. A destination-local
+`agent-toolkit.lock.json` records per-skill content fingerprints and installation
+provenance. Fingerprints cover relative file paths and bytes; they are not
+semantic versions or dependency constraints.
 
-Both creators were used in development (draft → dual critique → revision → validation → behavioral evals). Meaningful differences and how we resolved them — full evaluation outcomes in `tests/acceptance/README.md`:
+| Comparison | Outcome |
+|---|---|
+| Destination absent | `installed` |
+| Destination matches current source | `up-to-date` |
+| Destination matches recorded install, source differs | `updated` |
+| Destination differs without a matching record | `skipped-conflict`; preserve it unless `--force` |
 
-| Topic | Anthropic creator | OpenAI creator | Resolution |
-|---|---|---|---|
-| Description tone | "pushy" against undertriggering; all when-to-use in description | same requirement, concise is key | both descriptions state what + when + explicit non-triggers; kept under spec limits; trigger-eval simulated (see acceptance) |
-| Extra frontmatter | allows `compatibility` (older fork) | "only name+description; no other fields" (strict reading) | open spec wins: spec-legal keys only, minimal set used |
-| `agents/openai.yaml` | n/a | recommended | dropped for harness neutrality (above) |
-| Eval machinery | subagent eval loop + benchmark viewer via `claude` CLI | init/validate scripts, qualitative iteration | scripts runnable: both `quick_validate.py` executed; agent-behavior loop run via generic subagents (Claude-CLI-only parts documented as environment limitation, substituted per the brief) |
-| Writing style | explain why, few MUSTs | degrees of freedom; challenge token cost | judgment sections argue their why; low-freedom only at evidence/honesty rules (where failure is the point) and in map_check metadata block (parseable-by-design) |
-| Duplication | avoid duplication skill-internal | same | SKILL.md = workflow + contracts; references = methodology depth; assets = copy-fill templates; one pointer chain level |
-| Extra files in skill dir | (same rule) | explicit ban on README/CHANGELOG etc. | skill dirs contain only SKILL.md + resources; repo docs live at root/docs |
+A forced update replaces the whole selected skill directory, including local
+additions. Other skills and project artifacts are preserved. Skipped conflicts
+return exit 3; they do not prevent safe selected work from completing.
+`duplicate-warning` is advisory: it checks other known project-level skill
+locations, not user homes, ancestor repositories, arbitrary client settings, or
+cloud state. It neither resolves precedence nor removes copies.
 
-## Extending to an unrelated skill (the test case from §18)
+The path table is installer data, not a harness adapter layer. In particular,
+`devin` selects Devin CLI paths, not cloud setup. Client activation and reload
+semantics are outside this tool. The installer never edits project instruction
+files; a bootstrap pointer is proposed for manual, explicitly permitted append
+without replacing existing instructions. See [installation](installation.md).
 
-`skills/unity-workflow/SKILL.md` + own resources → `tools/validate.py` → `tools/install.py --skills unity-workflow`. Nothing ML/DS-specific exists outside `project-audit/references/ml-methodology.md`; `tools/`, `profiles/`, `docs/` carry no domain assumptions. The `mini-skill` fixture keeps this claim executable, not aspirational.
+## Shared contracts
+
+`project-audit` and `project-map` can cooperate through project artifacts, but
+neither requires the other. Small shared conventions are duplicated inside
+each skill so copying either directory alone preserves its instructions.
+
+| Contract | Meaning |
+|---|---|
+| Evidence core | `verified-static`, `verified-executed`, `inferred`, `proposed` |
+| Skill-specific statuses | Audit `unknown` means unverifiable in scope; map `stale` means known drift. Neither substitutes for the other's metadata status. |
+| Citations | Source `path::symbol` or `path:line`; executed evidence records command and result |
+| Artifact roots | `.agent/audits/<run-id>/` and `.agent/project-map/` |
+| State separation | Proposals do not describe implemented current state |
+| Finding lifecycle | `draft → reviewed → accepted/deferred/rejected → implemented-verified` |
+| Finding IDs | `AUD-<mode>-NNN`, optionally linked from map proposed-direction sections |
+
+A git revision is a baseline, not proof of correctness. Mechanical checks do
+not justify semantic claims or mass-refreshing untouched cards. If a sibling
+artifact is missing, proceed from source rather than requiring its skill.
+When changing a shared contract, synchronize both skill copies and this table.
+
+## Extension invariants
+
+- Preserve independent installation: all runtime resources stay within the
+  skill directory; optional sibling artifacts remain optional.
+- Use supported flat frontmatter plus a one-level `metadata:` map; keep the
+  description quoted on one line. See [contributing](contributing.md).
+- Keep tools stdlib-only and explicit about writes, conflicts, and exit codes.
+- Add regression coverage for mechanical behavior; do not infer harness runtime
+  behavior from copy tests.
+- Add a harness destination as path data and documentation, not a content fork.
+- Add infrastructure only for a demonstrated need.
+
+[Acceptance procedures](../tests/acceptance/README.md) and
+[recorded results](../tests/acceptance/results.md) retain the existing behavioral
+evidence. They are separate from unit-test and validator guarantees.

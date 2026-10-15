@@ -1,86 +1,104 @@
 # agent-toolkit
 
-A small, extensible library of **Agent Skills** — markdown-plus-filesystem capability packages that any skill-capable coding agent (Codex, Claude Code, GitHub Copilot, Devin, VS Code, …) can load — plus minimal tooling to validate and install them.
+A general-purpose library of independent skills in the
+[Agent Skills format](https://agentskills.io/specification), with stdlib Python
+tools for validation and installation.
 
-Skills here are built for the [open Agent Skills format](https://agentskills.io/specification): a directory with a `SKILL.md` (YAML frontmatter + instructions) and optional `references/`, `assets/`, `scripts/`. No runtime framework, no registry, no vendor lock-in.
+## Skill catalog
 
-## Available skills
+| Skill | Purpose | Scope |
+|---|---|---|
+| [project-audit](skills/project-audit/SKILL.md) | Project architecture and methodology audits | Software / ML |
+| [project-map](skills/project-map/SKILL.md) | Agent-oriented codebase navigation | General |
+| [agent-efficiency](skills/agent-efficiency/SKILL.md) | Diagnose workflow waste, reuse procedures, review available usage | Development workflows |
+| [tidy-dev](skills/tidy-dev/SKILL.md) | Choose worthwhile local structural improvements around a change | Coding / diff review |
 
-| Skill | What it does |
-|---|---|
-| [`project-audit`](skills/project-audit/) | Evidence-cited audits of software & ML/DS projects in three selectable modes: **architecture/MLOps**, **ML/DS methodology**, **exploratory** — each ending in a coding-agent handoff. Audits recommend; they never refactor. |
-| [`project-map`](skills/project-map/) | Creates, consults, incrementally updates, and validates a hierarchical (L0–L3) map of a repository under `.agent/project-map/` so agents navigate without re-exploring. The map is a navigation aid — code stays the authority. |
-
-**Skills vs. persistent project documents** — an important distinction: *skills* are installable instructions you copy into a harness's skills directory; they teach the agent *how* to work. The *artifacts* skills produce (maps in `.agent/project-map/`, audits in `.agent/audits/`) live in your project, are committed or reviewed like any document, and carry freshness metadata. Deleting the skill does not delete the artifacts, and the artifacts never depend on the toolkit being installed.
+Optional [focused-changes policy](policies/focused-changes.md): concise coding
+instructions to incorporate manually, not a third skill or an automatic hook.
 
 ## Quick start
 
+Run these commands from the toolkit checkout. Replace `/absolute/path/to/project`
+with your project's absolute path.
+
 ```bash
-# from this repo — install both skills into a project for your harness
-python tools/install.py --target /path/to/project --profile ml-development --harness codex
+# Generic harness + all skills + all profiles (defaults)
+python tools/install.py --target /absolute/path/to/project
 
-# one skill, Claude Code, preview first
-python tools/install.py --target /path/to/project --skills project-map --harness claude --dry-run
+# List available skills, profiles, and destination state
+python tools/install.py --target /absolute/path/to/project --harness generic --list
 
-# what's available / already installed?
-python tools/install.py --list --harness codex --target /path/to/project
+# Preview an update; omit --dry-run to apply it
+python tools/install.py --target /absolute/path/to/project --skills project-map --harness generic --dry-run
 ```
 
-Destination conventions verified against product docs (October 2026) — details and manual fallback in [docs/installation.md](docs/installation.md):
-
-| `--harness` | project scope | user scope |
+| Parameter | Available values | Usage |
 |---|---|---|
-| `claude` | `.claude/skills/` | `~/.claude/skills/` |
+| `--skills` | `all` (default), `project-audit`, `project-map`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
+| `--harness` | `generic` (default), `codex`, `claude`, `copilot`, `devin` | Choose one destination convention |
+| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles currently select `project-audit` and `project-map` |
+
+Without either selector, the defaults are `--skills all --profile all`.
+An explicit `--skills` or `--profile` limits installation to that selection;
+if both are supplied, their skills are combined without duplicates. Profiles
+are skill selections, not separately installed components.
+See [all installer options](docs/installation.md#options-and-defaults).
+
+Re-run the original install command after updating this checkout to update an
+unmodified installation. Outcomes are `installed`, `up-to-date`, `updated`, or
+`skipped-conflict`; `duplicate-warning` identifies another project-level copy.
+Conflicts retain local content and return exit code 3. `--force` replaces the
+selected skill directory, including locally added files. Other skills, project
+artifacts, and instruction files are preserved.
+
+### Installer destinations
+
+These are the installer's path mappings, not a guarantee of discovery or reload
+behavior in every harness version. Choose one location per team.
+
+| `--harness` | Project scope (default) | User scope |
+|---|---|---|
+| `generic` (default) | `.agents/skills/` | `~/.agents/skills/` |
 | `codex` | `.agents/skills/` | `~/.agents/skills/` |
+| `claude` | `.claude/skills/` | `~/.claude/skills/` |
 | `copilot` | `.github/skills/` | `~/.copilot/skills/` |
-| `devin` | `.devin/skills/` | `~/.config/devin/skills/` |
-| `generic` | `.agents/skills/` (cross-client convention) | `~/.agents/skills/` |
+| `devin` (CLI) | `.devin/skills/` | `~/.config/devin/skills/` |
 
-The installer copies files only, never symlinks (Windows-safe), never overwrites user-modified installs without `--force`, and never touches your `AGENTS.md`/`CLAUDE.md` — it prints guidance instead.
+The `devin` mapping targets Devin CLI, not cloud configuration. For cloud Devin
+or an unlisted client, confirm its supported repository path and use the
+[manual installation instructions](docs/installation.md#manual-installation).
+The installer copies files; it does not activate clients or edit `AGENTS.md` or
+`CLAUDE.md`.
 
-## Using the skills
-
-After install + restart (or automatic reload), invoke naturally:
-
-- **“Audit this project's architecture and ML methodology, cite evidence, give me findings I can hand to a coding agent.”** → `project-audit` runs `all` modes, writing `.agent/audits/<run-id>/` reports with findings in `status: draft` and per-mode coding-handoff sections.
-- **“Create a project map for this repo.”** → `project-map` writes `.agent/project-map/` (L1 index + L2 module cards, L3 only when triggered) and proposes a ≤15-line bootstrap pointer for `AGENTS.md`.
-- Later sessions automatically: read L1 → route to module card → **still inspect the actual code** → implement → verify → update touched cards only.
-- **“Refresh the map after my changes.”** → `project-map update` uses git to find affected cards; unrelated cards stay untouched.
-- **“Is the map still true?”** → `project-map validate` runs mechanical reference checks (`scripts/map_check.py`) plus agent spot-checks of claims against code.
-
-### Example workflows
-
-**New ML project:** install both skills → `project-map create` → skim the routing table → run `project-audit` (modes as needed) → review findings, accept some → coding agent plans work from accepted findings + map, verifies code while implementing → runs tests → `project-map update` for the touched cards.
-
-**Routine coding:** agent reads L1 → locates subsystem → reads real code/tests → changes → verifies → updates affected cards. A full audit never runs uninvited.
-
-**Third unrelated skill (e.g. `research-report`):** create `skills/research-report/SKILL.md` (+ its own resources), run `python tools/validate.py`, install with `--skills research-report`. No toolkit code changes — discovery is a directory scan. See [docs/contributing.md](docs/contributing.md).
-
-## Validating and testing
-
-```bash
-python tools/validate.py                 # spec metadata + local reference integrity
-python -m unittest discover -s tests -v  # installer / validator / map_check unit tests
-```
-
-Behavioral acceptance of the skills (audit/mapping runs against flawed-project fixtures) is documented in [tests/acceptance/](tests/acceptance/). Upstream skill-creator validators (`quick_validate.py` from Anthropic's and OpenAI's skill-creators) can be run via `python tools/validate.py --creators <dir>` when a PyYAML-capable Python is reachable.
 
 ## Repository layout
 
-```
+```text
 agent-toolkit/
-  skills/            # canonical skill sources (the deliverables)
-  tools/             # repo developer tools: validate.py, install.py (+ skillkit.py helper)
-  profiles/          # optional named skill collections (JSON lists)
-  tests/             # unit tests + fixtures + acceptance evidence
-  docs/              # architecture decisions, installation, contributing
+  skills/       # canonical, independently installable skill directories
+  tools/        # installer, validator, shared development helpers
+  profiles/     # optional JSON collections of skill names
+  policies/     # optional project instructions; copied manually, not installed
+  tests/        # unit tests, fixtures, existing acceptance evidence
+  docs/         # installation, architecture, contributing
 ```
 
-## Design posture
+## Development
 
-Sophisticated in reasoning, lightweight in infrastructure: ordinary filesystem conventions, four stdlib-Python scripts (`tools/validate.py`, `tools/install.py`, `skills/project-map/scripts/map_check.py`, `skills/project-audit/scripts/check_report.py`), and deliberately no plugin framework, registry, database, hooks, or orchestration layer. Rationale and trade-offs: [docs/architecture.md](docs/architecture.md).
+```bash
+python tools/validate.py
+python -m unittest discover -s tests -v
+```
 
-## Limitations
+The validator and unit suite check metadata, references, and tool mechanics;
+they do not establish live behavior for every harness. Optional upstream
+creator checks use `python tools/validate.py --creators /path/to/skill-creator/skills`
+with a PyYAML-capable interpreter. Creators are not runtime dependencies.
 
-- Harness *behavior* differs beyond the spec (auto-triggering, reload semantics, Windows details). Directly tested here: installer conventions + unit tests; live agent behavior was validated via subagent workflow tests (see [tests/acceptance/](tests/acceptance/)). Each harness smoke test should still be done once in your environment — [docs/installation.md](docs/installation.md) lists manual procedures.
-- `project-audit` and `project-map` share conventions (evidence statuses, `.agent/` layout) that are intentionally duplicated per-skill so each stays independently installable; drift between the two copies is possible — the contributor checklist includes a sync check.
+## Further reading
+
+- [Installation and updates](docs/installation.md)
+- [Architecture and shared contracts](docs/architecture.md)
+- [Contribution checklist](docs/contributing.md)
+- [Repository working rules](AGENTS.md)
+- [Acceptance procedures](tests/acceptance/README.md) and [recorded evidence](tests/acceptance/results.md); recorded runs are scoped evidence, not cross-harness certification.

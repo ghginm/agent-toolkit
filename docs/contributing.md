@@ -1,44 +1,118 @@
 # Contributing
 
-How to change this toolkit well. The two upstream skill-creators (Anthropic's `skill-creator-anthropic`, OpenAI's `skill-creator-openai`) supply the quality bar summarized below; their directories are NOT runtime dependencies.
+Contribute independent Agent Skills or small supporting tools. Read
+[AGENTS.md](../AGENTS.md) and [architecture](architecture.md) before changing
+shared conventions. No domain-specific workflow or creator checkout is
+required to contribute.
 
-## Adding an independent skill
+## Add or revise a skill
 
-1. Create `skills/<new-name>/SKILL.md` — hyphen-case name ≤64 chars matching the directory; frontmatter limited to spec keys (`name`, `description`, quoted single-line description stating what + when + non-triggers; optional `license`, `metadata`). Optionally add `references/`, `assets/`, `scripts/` — only what the skill actually uses. (OpenAI's `init_skill.py` scaffolds the same shape if you want it; drop `agents/openai.yaml` unless you specifically want Codex UI metadata.)
-2. `python tools/validate.py` → `result: OK`.
-3. Install-test: `python tools/install.py --target <tmpdir> --skills <new-name> --harness generic --dry-run`, then a real run. No installer/registry/profile edits required for discovery; add a profile entry only if the skill belongs in an existing collection.
-4. Behavioral check: have a fresh agent (subagent, or yourself in a clean session) do a realistic task from the skill; verify it triggers, follows, and produces the promised artifacts. Keep evidence under `tests/acceptance/`.
-5. README catalog row + docs if meaningful. Commit.
+| Phase | Requirements |
+|---|---|
+| Create | Add or edit canonical `skills/<name>/SKILL.md`; define task, boundaries, outputs, and completion criteria. No per-harness copies. |
+| Resources | Bundle only necessary references, assets, and scripts; no imports from `tools/` or reads of sibling skills. |
+| Metadata | Match directory name; provide a valid description with concrete triggers and useful non-triggers. |
+| Validate | Run the toolkit validator; check resource links and command paths. |
+| Test | Run unit tests and focused regressions for mechanical changes; use a focused behavioral check when relevant. |
+| Document | Update the [README catalog](../README.md#skill-catalog); profiles are optional collections. |
+| Submit | Review the diff and commit a focused change; state executed checks and limitations. |
 
-A new skill must not import from `tools/` or reference files outside its own directory at runtime.
+## Content and resources
 
-## Modifying an existing skill
+| Component | Guidance |
+|---|---|
+| Description | State what the skill does and when to use it, with concrete triggers and useful non-triggers; no marketing claims |
+| `SKILL.md` body | Use imperative technical English; stay under 500 lines and keep only workflow-critical instructions |
+| `references/` | Detailed methods, linked directly from `SKILL.md` with when-to-read guidance; give long references a contents list |
+| `assets/` | Copy-and-fill templates or other workflow inputs, referenced by name |
+| `scripts/` | Deterministic, repeated mechanics; stdlib Python, explicit paths and write scope, focused unit coverage |
+| Repository docs | Installation and contributor guidance; avoid README, changelog, or development notes inside a skill |
 
-Same loop: edit → validate → unit tests (`python -m unittest discover -s tests`) → re-run the relevant acceptance scenario → commit. If you changed shared conventions (evidence status names, citation format, `.agent/` paths, finding-ID format, lifecycle states) — sync BOTH skills and `docs/architecture.md`; the contract is intentionally duplicated so each skill installs alone.
+Keep judgment in prose rather than scripting semantic verdicts. Avoid repeating
+rules across a skill's body and references. The deliberate exception is small
+cross-skill contracts: duplicate them to preserve standalone use, then keep
+all affected copies and [architecture](architecture.md#shared-contracts) synchronized.
 
-## Quality checklist (condensed from both creators)
+## Metadata contract
 
-- **Description does the triggering work**: what + when + realistic-phrasing keywords + explicit non-triggers; no angle brackets; ≤1024 chars but aim < ~600; don't repeat the skill name; avoid marketing adjectives. Undertriggering is the common failure — be specific about tasks, not modest.
-- **Every paragraph earns its tokens** (OpenAI: "challenge each piece of information"); delete or move to a reference if it doesn't change behavior.
-- **Explain why, don't stack MUSTs** (Anthropic writing style) — except where a hard rule IS the point (evidence honesty, "verify code before implementing"): those stay firm, and the reason is stated once.
-- **Degrees of freedom** (OpenAI): deterministic + repeated + testable → script; judgment → prose with reasoning. Never script semantic evaluation; never leave fragile mechanical steps to improvisation.
-- **Progressive disclosure**: SKILL.md < 500 lines (target far less); references one level from SKILL.md, each focused, >100-line files get a Contents list; templates in `assets/` referenced by name; SKILL.md says *when* to open each resource.
-- **No duplication** between SKILL.md and references beyond pointers + one-line framing; a rule lives in exactly one place.
-- **No auxiliary files in the skill dir**: no README/CHANGELOG/dev-notes; user-facing docs belong to the repo root.
-- **Portability**: works in plain filesystem terms — no harness tool names in skill bodies, stdlib-only scripts, cross-platform paths (pathlib), git optional everywhere.
-- **Scripts are tested by running them** (both creators demand this); fixtures under `tests/` exercise them.
-- **Independence**: copy the skill folder to a blank project — everything it promises must still work.
+Use frontmatter delimited by `---`. Required fields are `name` and
+`description`; optional spec keys are `license`, `compatibility`, `metadata`,
+and `allowed-tools`.
 
-## Validation commands
+- Match `name` to the directory: lowercase letters, digits, and hyphens; at most
+  64 characters, with no leading, trailing, or consecutive hyphens.
+- Quote `description` on a single line; keep it nonempty, at most 1024
+  characters, and free of angle brackets. Folded YAML scalars are unsupported.
+- Use flat `key: value` fields and only a one-level string map for `metadata`.
+  Do not add harness-specific presentation keys to the canonical frontmatter.
+
+## Validation and tests
+
+From the repository root:
 
 ```bash
 python tools/validate.py
-python tools/validate.py --creators /path/to/skill-creator/skills   # optional: run upstream quick_validate.py (needs a PyYAML-capable python)
 python -m unittest discover -s tests -v
 ```
 
-Upstream validators check frontmatter basics (name/description/keys/lengths); `tools/validate.py` adds local-reference integrity, directory/name consistency, and skill-shape warnings. Running both is cheap — CI habit: upstream when available, toolkit always.
+Run the suite under both available Python versions when practical. Keep the
+`mini-skill` discovery fixture valid and add focused tests for installer,
+validator, or bundled-checker changes. Verify every edited Markdown link and
+skill resource path. Check script examples against their actual argument
+parsers: use absolute project and installed-skill directories, explicit
+`--repo`/`--map-dir` for map checks, and `--project`/`--run` for audit checks.
+See [installation examples](installation.md#running-bundled-checkers).
 
-## Behavioral acceptance
+Optional upstream creator validation:
 
-`tests/acceptance/README.md` defines the scenario suite (audit against a flawed ML fixture; map create/route/stale/update/missing/small-large). Unit tests prove the mechanics; acceptance runs prove the *agent behavior* the brief cares about. Re-run affected scenarios on skill edits, record results per the acceptance README.
+```bash
+python tools/validate.py --creators /path/to/skill-creator/skills
+```
+
+Creator validators need a PyYAML-capable interpreter. They supplement the
+stdlib toolkit validator; they are neither mandatory tooling nor skill runtime
+dependencies.
+
+Each available creator runs independently for every selected skill. Reports
+identify the creator and skill: `PASS` means exit 0; `FAIL` means validation
+rejection (exit 1); `ERROR` means a Python crash, abnormal exit, launch failure,
+or timeout. Missing scripts or a missing PyYAML-capable interpreter are
+`SKIPPED`, never `PASS`. Failures and errors make the final exit code 1;
+remaining checks still run.
+
+## Clean release archives
+
+No archive-generation tooling is maintained. After reviewing and committing
+the intended source changes, package tracked content from that commit:
+
+```bash
+git archive --format=tar.gz --prefix=agent-toolkit/ -o ../agent-toolkit.tar.gz HEAD
+```
+
+This excludes untracked files and working-tree changes. `.gitignore` keeps
+Python caches out of normal staging; `.gitattributes` also excludes cache
+paths from `git archive` if accidentally tracked. Never use a recursive archive
+of the working directory as a release artifact.
+
+## Review and submission checklist
+
+- [ ] Skill scope and resources work without this checkout or another skill.
+- [ ] Metadata, local references, and the under-500-line skill limit hold.
+- [ ] Validator and unit-suite results are recorded, including failures or skips.
+- [ ] Shared evidence statuses, citations, artifact paths, lifecycle, and IDs are
+      synchronized where changed.
+- [ ] Catalog, profiles when relevant, and affected commands or links are current.
+- [ ] No project instructions are overwritten; bootstrap additions remain
+      proposed, manual, and explicitly opt-in.
+- [ ] Changes are limited to the intended files; the submission describes what
+      changed, why, verification performed, and remaining limitations.
+
+## Existing behavioral evidence
+
+[Acceptance procedures](../tests/acceptance/README.md) describe behavioral
+scenarios; [recorded results](../tests/acceptance/results.md) preserve prior
+runs. Unit tests establish mechanics, not agent judgment or every client's
+runtime behavior. Follow the repository's acceptance policy for behavioral
+skill changes unless the task explicitly narrows verification. A documentation
+cleanup does not itself require new acceptance runs or installation simulations;
+report the checks actually performed.

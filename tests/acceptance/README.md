@@ -41,4 +41,9 @@ Per scenario: (1) copy fixture under `/tmp/atk-accept/<scenario>/proj`; (2) spaw
 
 ## Results
 
+Focused checks for `agent-efficiency`, `tidy-dev`, and the optional policy live in
+[extensions.md](extensions.md), with executed evidence in
+[extensions-results.md](extensions-results.md). They use small supplied-session
+scenarios and the existing fixture, not a new benchmark harness.
+
 `results.md` in this directory records actual executed runs with dates and evidence. Absence of a scenario there means it was NOT run — check `results.md` before trusting any capability claim.

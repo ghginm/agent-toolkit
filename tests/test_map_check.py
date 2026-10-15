@@ -1,15 +1,18 @@
 """Unit tests for skills/project-map/scripts/map_check.py (mechanical checks)."""
 import json
+import runpy
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 REPO = Path(__file__).resolve().parent.parent
 FIX = REPO / "tests" / "fixtures"
 SCRIPT = REPO / "skills" / "project-map" / "scripts" / "map_check.py"
+MAP_CHECK = SimpleNamespace(**runpy.run_path(str(SCRIPT)))
 
 
 def run(args, cwd):
@@ -104,6 +107,33 @@ class MapCheckCase(unittest.TestCase):
         out = json.loads(r.stdout)
         self.assertIn("app/brand_new.py", out["changed_uncovered"])
 
+    def test_rename_paths_working_and_committed(self):
+        if shutil.which("git") is None:
+            self.skipTest("git unavailable")
+        self.git("init", "-q")
+        self.git("config", "user.email", "t@t")
+        self.git("config", "user.name", "t")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "base")
+        base = self.git("rev-parse", "HEAD")
+        self.git("mv", "app/core.py", "app/renamed core.py")
+        expected = ["app/core.py", "app/renamed core.py"]
+        self.assertEqual(MAP_CHECK.changed_paths(self.proj, working=True)[0], expected)
+        old_card = MAP_CHECK.Card(self.card("modules/core.md"), self.proj / self.map)
+        new_card = MAP_CHECK.Card(self.card("modules/core.md"), self.proj / self.map)
+        new_card.meta["sources"] = ["app/renamed core.py"]
+        hits, uncovered = MAP_CHECK.affected({"old": old_card, "new": new_card}, expected)
+        self.assertEqual(set(hits), {"old", "new"})
+        self.assertEqual(uncovered, [])
+        r = run(["--json"], cwd=self.proj)
+        self.assertIn("dirty working-tree files in scope: app/core.py", r.stdout)
+        r = run(["--affected", "--working", "--json"], cwd=self.proj)
+        self.assertEqual(json.loads(r.stdout)["affected"]["core"]["changed"], ["app/core.py"])
+        self.git("commit", "-qm", "rename")
+        self.assertEqual(MAP_CHECK.changed_paths(self.proj, rev=base)[0], expected)
+        r = run(["--affected", "--rev", base, "--json"], cwd=self.proj)
+        self.assertEqual(json.loads(r.stdout)["affected"]["core"]["changed"], ["app/core.py"])
+
     def test_revision_checks_with_git(self):
         if shutil.which("git") is None:
             self.skipTest("git unavailable")
@@ -121,6 +151,36 @@ class MapCheckCase(unittest.TestCase):
         r = run([], cwd=self.proj)
         self.assertEqual(r.returncode, 1)
         self.assertIn("unknown to git", r.stdout)
+
+    def test_changed_paths_preserve_filenames_and_all_change_states(self):
+        if shutil.which("git") is None:
+            self.skipTest("git unavailable")
+        self.git("init", "-q")
+        self.git("config", "user.email", "t@t")
+        self.git("config", "user.name", "t")
+        tracked = ["staged edit.py", "unstaged edit.py", "staged delete.py",
+                   "unstaged delete.py", ' old "é"\tname.py ']
+        for name in tracked:
+            (self.proj / name).write_text("original\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "base")
+        for name in tracked[:2]:
+            (self.proj / name).write_text("changed\n")
+        self.git("add", "--", tracked[0])
+        self.git("rm", "--", tracked[2])
+        (self.proj / tracked[3]).unlink()
+        renamed = ' new "é"\nname.py '
+        self.git("mv", "--", tracked[4], renamed)
+        (self.proj / "staged add.py").write_text("added\n")
+        self.git("add", "--", "staged add.py")
+        (self.proj / "new dir").mkdir()
+        (self.proj / "new dir" / "untracked file.py").write_text("new\n")
+        expected = sorted(tracked + [renamed, "staged add.py", "new dir/untracked file.py"])
+        self.assertEqual(MAP_CHECK.changed_paths(self.proj, working=True)[0], expected)
+        self.assertIsNone(MAP_CHECK.changed_paths(self.proj, rev="nonexistent-baseline")[0])
+        self.assertEqual(MAP_CHECK.changed_paths(self.tmp, files=["app/core.py"]),
+                         (["app/core.py"], "provided paths"))
+        self.assertIsNone(MAP_CHECK.changed_paths(self.tmp, working=True)[0])
 
     def test_dirty_tree_note(self):
         if shutil.which("git") is None:

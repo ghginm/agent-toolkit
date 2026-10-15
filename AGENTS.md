@@ -27,9 +27,9 @@ system, no runtime deps (Python stdlib only), and should stay that way.
    versions if both are available: system 3.12, hermes 3.14).
 3. Edited a skill's SKILL.md? Verify every `references/…`, `assets/…`,
    `scripts/…` token still resolves, and the file stays under 500 lines.
-4. Changed shared conventions (evidence statuses, `.agent/` paths, finding-ID
-   format) in one skill? Sync the matching text in the other skill and in
-   docs/architecture.md.
+4. When modifying shared contracts or conventions (evidence statuses, `.agent/`
+   paths, finding-ID format), update all affected skills and references,
+   including docs/architecture.md. Do not modify unrelated skills.
 5. Skills changed → re-run at least the affected acceptance scenario from
    tests/acceptance/ (procedure in that README).
 

@@ -42,16 +42,19 @@ MDLINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 CITATION_RE = re.compile(r"[A-Za-z0-9_./-]+\.(?:py|md|txt|ya?ml|toml|json|ipynb|R|jl)(?:::|\:)")
 
 
-def run_git(repo: Path, args):
-    """Return stdout lines on success, None on any failure (no repo, no git...)."""
+def run_git(repo: Path, args, nul=False):
+    """Return lines or NUL-delimited fields; None on git/environment failure."""
     try:
         p = subprocess.run(["git", "-C", str(repo)] + args,
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, timeout=30)
     except (OSError, subprocess.TimeoutExpired):
         return None
     if p.returncode != 0:
         return None
-    return [ln for ln in p.stdout.splitlines() if ln.strip()]
+    text = os.fsdecode(p.stdout)
+    if nul:
+        return text.split("\0")[:-1]
+    return [ln for ln in text.splitlines() if ln.strip()]
 
 
 def _clean(val: str) -> str:
@@ -146,8 +149,7 @@ def check(map_dir: Path, repo: Path):
     head = (head_lines or [None])[0]
     dirty = set()
     if git_ok:
-        for ln in run_git(repo, ["status", "--porcelain"]) or []:
-            dirty.add(ln[3:].strip().strip('"'))
+        dirty.update(changed_paths(repo, working=True)[0] or [])
     if not git_ok:
         notes.append("git unavailable or not a repo: revision/dirty checks skipped")
 
@@ -234,10 +236,18 @@ def changed_paths(repo: Path, rev=None, working=False, files=None):
         return None, "git unavailable — pass --files or let the agent inspect the repo directly"
     paths = []
     # uncommitted/untracked state counts whenever git change detection is used
-    for ln in run_git(repo, ["status", "--porcelain"]) or []:
-        paths.append(ln[3:].strip().strip('"'))
+    status = run_git(repo, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], nul=True)
+    if status is None:
+        return None, "git status failed — pass --files or inspect the repo directly"
+    records = iter(status)
+    for record in records:
+        paths.append(record[3:])
+        # Porcelain -z emits destination first, then source for renames/copies.
+        if "R" in record[:2] or "C" in record[:2]:
+            paths.append(next(records))
     if rev:
-        got = run_git(repo, ["diff", "--name-only", f"{rev}..HEAD"])
+        # Disable rename collapsing: deletion + addition retains both paths.
+        got = run_git(repo, ["diff", "--name-only", "--no-renames", "-z", f"{rev}..HEAD", "--"], nul=True)
         if got is None:
             return None, f"baseline '{rev}' invalid or not a repo"
         paths.extend(got)

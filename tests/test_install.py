@@ -1,4 +1,5 @@
 """Unit tests for tools/install.py — discovery, copy semantics, safe updates."""
+import json
 import shutil
 import subprocess
 import sys
@@ -34,9 +35,87 @@ class InstallCase(unittest.TestCase):
         self.assertIn("not installed", r.stdout)
         self.assertIn("profiles:", r.stdout)
 
+    def test_default_installs_all_skills_with_generic_harness(self):
+        r = run(["--target", str(self.tmp)])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        expected = {p.parent.name for p in (REPO / "skills").glob("*/SKILL.md")}
+        dest = self._dest(".agents")
+        self.assertEqual({p.name for p in dest.iterdir() if p.is_dir()}, expected)
+        lock = json.loads((dest / "agent-toolkit.lock.json").read_text())
+        self.assertEqual(set(lock["entries"]), expected)
+        self.assertTrue(all(entry["harness"] == "generic" for entry in lock["entries"].values()))
+
+    def test_explicit_all_skills_and_profiles(self):
+        expected = {p.parent.name for p in (REPO / "skills").glob("*/SKILL.md")}
+        for i, flags in enumerate((["--skills", "all"], ["--skills", "all", "--profile", "all"])):
+            with self.subTest(flags=flags):
+                target = self.tmp / str(i)
+                r = run(["--target", str(target), *flags])
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                dest = target / ".agents" / "skills"
+                self.assertEqual({p.name for p in dest.iterdir() if p.is_dir()}, expected)
+                self.assertEqual(r.stdout.count("[ok] installed:"), len(expected))
+
+    def test_all_profiles_union_without_duplicates(self):
+        root = self.tmp / "source"
+        shutil.copytree(REPO / "skills", root / "skills")
+        profiles = root / "profiles"
+        profiles.mkdir()
+        for name, skills in (("first", ["project-map"]),
+                             ("second", ["project-map", "tidy-dev"])):
+            (profiles / f"{name}.json").write_text(json.dumps({"skills": skills}))
+        target = self.tmp / "project"
+        r = run(["--root", str(root), "--target", str(target), "--profile", "all"])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        dest = target / ".agents" / "skills"
+        self.assertEqual({p.name for p in dest.iterdir() if p.is_dir()}, {"project-map", "tidy-dev"})
+        self.assertEqual(r.stdout.count("[ok] installed:"), 2)
+
+    def test_named_profile_limits_default_selection(self):
+        r = run(["--target", str(self.tmp), "--profile", "software-development"])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
+                         {"project-audit", "project-map"})
+
+    def test_explicit_skills_and_profile_are_combined_once(self):
+        r = run(["--target", str(self.tmp), "--skills", "project-map,tidy-dev,tidy-dev",
+                 "--profile", "ml-development"])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
+                         {"project-audit", "project-map", "tidy-dev"})
+        self.assertEqual(r.stdout.count("[ok] installed:"), 3)
+
+    def test_default_discovers_new_skill_without_profiles(self):
+        r = run(["--root", str(FIX / "skillset"), "--target", str(self.tmp)])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertTrue((self._dest(".agents") / "mini-skill" / "SKILL.md").is_file())
+
+    def test_default_dry_run_writes_nothing(self):
+        r = run(["--target", str(self.tmp), "--dry-run"])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        expected = len(list((REPO / "skills").glob("*/SKILL.md")))
+        self.assertEqual(r.stdout.count("[dry] installed:"), expected)
+        self.assertEqual(list(self.tmp.iterdir()), [])
+
+    def test_unknown_explicit_selection_fails_before_writing(self):
+        for flags in (["--skills", "unknown"], ["--profile", "unknown"],
+                      ["--skills", "unknown", "--profile", "ml-development"]):
+            with self.subTest(flags=flags):
+                r = run(["--target", str(self.tmp), *flags])
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertEqual(list(self.tmp.iterdir()), [])
+
     def test_install_single_skill_independent(self):
+        other = self.tmp / ".devin" / "skills" / "project-audit"
+        other.mkdir(parents=True)
+        (other / "SKILL.md").write_text("team copy")
         r = run(["--target", str(self.tmp), "--skills", "project-audit", "--harness", "generic"])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("installed: project-audit", r.stdout)
+        self.assertIn("duplicate-warning: project-audit", r.stdout)
+        self.assertIn(str(other), r.stdout)
+        self.assertIn("Destination: " + str(self._dest(".agents")), r.stdout)
+        self.assertEqual((other / "SKILL.md").read_text(), "team copy")
         d = self._dest(".agents")
         self.assertTrue((d / "project-audit" / "SKILL.md").is_file())
         self.assertFalse((d / "project-map").exists())  # installing one must not require the other
@@ -63,6 +142,8 @@ class InstallCase(unittest.TestCase):
         r = run(["--target", str(self.tmp), "--skills", "project-audit", "--harness", "generic"])
         self.assertEqual(r.returncode, 0)
         self.assertIn("already installed and unchanged", r.stdout)
+        self.assertIn("up-to-date: project-audit", r.stdout)
+        self.assertNotIn("duplicate-warning", r.stdout)
         # user edits the installed copy (outside lock record) -> skip-conflict, content preserved
         victim = d / "project-audit" / "SKILL.md"
         original = victim.read_text()
@@ -70,11 +151,14 @@ class InstallCase(unittest.TestCase):
         r = run(["--target", str(self.tmp), "--skills", "project-audit", "--harness", "generic"])
         self.assertEqual(r.returncode, 3)
         self.assertIn("user-modified", r.stdout)
+        self.assertIn("skipped-conflict: project-audit", r.stdout)
+        self.assertNotIn("Installed to", r.stdout)
         self.assertIn("USER NOTE", victim.read_text())
         # lock still says installed-content differs; --force replaces
         r = run(["--target", str(self.tmp), "--skills", "project-audit", "--harness", "generic", "--force"])
         self.assertEqual(r.returncode, 0, r.stdout)
         self.assertNotIn("USER NOTE", victim.read_text())
+        self.assertIn("updated: project-audit", r.stdout)
 
     def test_replace_after_source_update_is_silent(self):
         """A newer source version replaces our previous install without conflict warnings."""
@@ -89,7 +173,7 @@ class InstallCase(unittest.TestCase):
         src_md.write_text(src_md.read_text() + "\nNEW: updated source\n")
         r = run(["--root", str(src_root), "--target", str(target), "--skills", "project-audit", "--harness", "generic"])
         self.assertEqual(r.returncode, 0, r.stdout)
-        self.assertIn("replace", r.stdout)
+        self.assertIn("updated: project-audit", r.stdout)
         self.assertIn("NEW: updated source",
                       (target / ".agents" / "skills" / "project-audit" / "SKILL.md").read_text())
 

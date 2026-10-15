@@ -6,6 +6,7 @@ selected skills to the destination convention of the harness — one skill per
 directory, unchanged content. No symlinks (Windows-safe), no framework.
 
 Usage:
+  python tools/install.py --target /path/to/project  # generic, all skills/profiles
   python tools/install.py --target /path/to/project --skills project-audit,project-map --harness codex
   python tools/install.py --target . --profile ml-development --harness claude --dry-run
   python tools/install.py --list --harness copilot [--target project-dir]
@@ -91,7 +92,7 @@ def execute(actions, lock, dest: Path, harness, scope, dry_run):
     lines, did = [], False
     for kind, src, target, src_fp in actions:
         if kind == "install":
-            lines.append(f"[{'dry' if dry_run else 'ok'}] {kind}: {src.name} -> {target}")
+            lines.append(f"[{'dry' if dry_run else 'ok'}] installed: {src.name} -> {target}")
             if not dry_run:
                 shutil.copytree(src, target)
                 lock.setdefault("entries", {})[src.name] = {
@@ -101,9 +102,9 @@ def execute(actions, lock, dest: Path, harness, scope, dry_run):
                 }
             did = True
         elif kind == "up-to-date":
-            lines.append(f"[skip] {src.name} already installed and unchanged at {target}")
+            lines.append(f"[skip] up-to-date: {src.name} -> {target} (already installed and unchanged)")
         elif kind == "replace":
-            lines.append(f"[{'dry' if dry_run else 'ok'}] replace: {target} (previous install by this tool or --force)")
+            lines.append(f"[{'dry' if dry_run else 'ok'}] updated: {src.name} -> {target} (previous install by this tool or --force)")
             if not dry_run:
                 shutil.rmtree(target)
                 shutil.copytree(src, target)
@@ -114,7 +115,7 @@ def execute(actions, lock, dest: Path, harness, scope, dry_run):
                 }
             did = True
         else:  # skip-conflict
-            lines.append(f"[WARN] {src.name}: {target} exists with different content and no install record — "
+            lines.append(f"[WARN] skipped-conflict: {src.name} -> {target} exists with different content — "
                          f"likely user-modified. Not touched. Re-run with --force to replace "
                          f"(removes files added inside that skill directory).")
     if not dry_run and did:
@@ -126,8 +127,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Install agent-toolkit skills into a target project or user home.")
     ap.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="toolkit repo root (canonical skills source)")
     ap.add_argument("--target", default=".", help="destination project directory")
-    ap.add_argument("--skills", help="comma-separated skill names")
-    ap.add_argument("--profile", help="profile name under profiles/ (JSON with 'skills' list)")
+    ap.add_argument("--skills", help="comma-separated skill names or 'all'; default: all when no selection is given")
+    ap.add_argument("--profile", help="profile name under profiles/ or 'all'; default: all when no selection is given")
     ap.add_argument("--harness", choices=sorted(HARNESS_DIRS), default="generic")
     ap.add_argument("--scope", choices=["project", "user"], default="project")
     ap.add_argument("--dry-run", action="store_true")
@@ -155,16 +156,28 @@ def main(argv=None):
             print(f"  {name}: {state}")
         return 0
 
-    if args.profile:
-        prof = root / "profiles" / f"{args.profile}.json"
-        if not prof.is_file():
-            print(f"ERROR: profile not found: {prof}", file=sys.stderr)
-            return 2
-        names = json.loads(prof.read_text(encoding="utf-8")).get("skills", [])
-    elif args.skills:
-        names = [s.strip() for s in args.skills.split(",") if s.strip()]
-    else:
-        print("ERROR: pass --skills a,b or --profile name", file=sys.stderr)
+    # Apply defaults together, not independently: an explicit subset must not
+    # be broadened by the other selector's implicit 'all'.
+    if args.skills is None and args.profile is None:
+        args.skills = args.profile = "all"
+    names = []
+    if args.skills is not None:
+        names.extend(sorted(by_name) if args.skills == "all" else
+                     [s.strip() for s in args.skills.split(",") if s.strip()])
+    if args.profile is not None:
+        if args.profile == "all":
+            profiles = sorted((root / "profiles").glob("*.json"))
+        else:
+            prof = root / "profiles" / f"{args.profile}.json"
+            if not prof.is_file():
+                print(f"ERROR: profile not found: {prof}", file=sys.stderr)
+                return 2
+            profiles = [prof]
+        for prof in profiles:
+            names.extend(json.loads(prof.read_text(encoding="utf-8")).get("skills", []))
+    names = list(dict.fromkeys(names))
+    if not names:
+        print("ERROR: selection contains no skills", file=sys.stderr)
         return 2
 
     skills = []
@@ -187,17 +200,25 @@ def main(argv=None):
 
     dest = resolve_dest(Path(args.target).resolve(), args.harness, args.scope)
     actions, lock = plan_actions(skills, dest, args.force)
+    print(f"Destination: {dest}")
+    if args.scope == "project":
+        project = Path(args.target).resolve()
+        other_dirs = sorted({project / paths[0] for paths in HARNESS_DIRS.values()
+                             if (project / paths[0]).resolve() != dest})
+        for src in skills:
+            duplicates = [d / src.name for d in other_dirs if (d / src.name).is_dir()]
+            if duplicates:
+                print(f"WARN: duplicate-warning: {src.name} also exists at:")
+                for duplicate in duplicates:
+                    print(f"  {duplicate}/")
+                print(f"Selected destination:\n  {dest / src.name}/")
+                print("Multiple copies may cause duplicate discovery or conflicting versions.")
     for line in execute(actions, lock, dest, args.harness, args.scope, args.dry_run):
         print(line)
     if args.dry_run:
         print("dry-run: nothing written")
     else:
-        print(f"\nInstalled to {dest}")
-        print("Activate: most harnesses pick skills up automatically (restart the CLI if not;")
-        print("Claude Code hot-reloads, Devin re-scans on clone).")
-        print("Verify: ask the agent to list/summarize available skills, or check the SKILL.md path above.")
-        print("Optional: paste the project-map bootstrap snippet into AGENTS.md/CLAUDE.md")
-        print("(skills/project-map/assets/bootstrap-snippet.md) — the installer never edits those files.")
+        print("Verify skill discovery in your harness; loading and invocation behavior vary.")
     kinds = {a[0] for a in actions}
     return 0 if "skip-conflict" not in kinds else 3
 

@@ -1,0 +1,5 @@
+# Keep Python build artifacts out of release archives, even if force-added.
+__pycache__ export-ignore
+**/__pycache__ export-ignore
+*.pyc export-ignore
+*.pyo export-ignore
