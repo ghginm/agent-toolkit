@@ -41,6 +41,11 @@ Per scenario: (1) copy fixture under `/tmp/atk-accept/<scenario>/proj`; (2) spaw
 
 ## Results
 
+Documentation workflow checks (summary-first audit, human brief synthesis,
+standalone use, freshness, incremental refresh, and description routing) live
+in [documentation.md](documentation.md). Executed runs are recorded separately
+in [documentation-results.md](documentation-results.md); unrun cases are not passes.
+
 Focused checks for `agent-efficiency`, `tidy-dev`, and the optional policy live in
 [extensions.md](extensions.md), with executed evidence in
 [extensions-results.md](extensions-results.md). They use small supplied-session

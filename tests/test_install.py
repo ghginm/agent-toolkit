@@ -32,6 +32,7 @@ class InstallCase(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("project-audit", r.stdout)
         self.assertIn("project-map", r.stdout)
+        self.assertIn("project-brief", r.stdout)
         self.assertIn("not installed", r.stdout)
         self.assertIn("profiles:", r.stdout)
 
@@ -75,15 +76,15 @@ class InstallCase(unittest.TestCase):
         r = run(["--target", str(self.tmp), "--profile", "software-development"])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
-                         {"project-audit", "project-map"})
+                         {"project-audit", "project-map", "project-brief"})
 
     def test_explicit_skills_and_profile_are_combined_once(self):
         r = run(["--target", str(self.tmp), "--skills", "project-map,tidy-dev,tidy-dev",
                  "--profile", "ml-development"])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
-                         {"project-audit", "project-map", "tidy-dev"})
-        self.assertEqual(r.stdout.count("[ok] installed:"), 3)
+                         {"project-audit", "project-map", "project-brief", "tidy-dev"})
+        self.assertEqual(r.stdout.count("[ok] installed:"), 4)
 
     def test_default_discovers_new_skill_without_profiles(self):
         r = run(["--root", str(FIX / "skillset"), "--target", str(self.tmp)])
@@ -128,6 +129,7 @@ class InstallCase(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             self.assertTrue((t / sub / "skills" / "project-audit" / "SKILL.md").is_file())
             self.assertTrue((t / sub / "skills" / "project-map" / "SKILL.md").is_file())
+            self.assertTrue((t / sub / "skills" / "project-brief" / "SKILL.md").is_file())
 
     def test_dry_run_writes_nothing(self):
         r = run(["--target", str(self.tmp), "--skills", "project-map", "--harness", "generic", "--dry-run"])
@@ -201,6 +203,47 @@ class InstallCase(unittest.TestCase):
                     "references/workflows.md", "assets/l2-module-template.md",
                     "assets/bootstrap-snippet.md"):
             self.assertTrue((d / rel).is_file(), rel)
+
+    def test_brief_alone_all_harnesses_preserves_artifacts_and_conflicts(self):
+        cases = {"generic": ".agents", "codex": ".agents", "claude": ".claude",
+                 "copilot": ".github", "devin": ".devin"}
+        for harness, directory in cases.items():
+            with self.subTest(harness=harness):
+                target = self.tmp / harness
+                target.mkdir()
+                preserved = {
+                    "AGENTS.md": "Team instructions\n",
+                    "CLAUDE.md": "Team Claude instructions\n",
+                    "policies/focused-changes.md": "Local policy\n",
+                    "docs/project-brief/README.md": "Authored guide\n",
+                    ".agent/project-map/index.md": "Local map\n",
+                }
+                for relative, content in preserved.items():
+                    path = target / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(content, encoding="utf-8")
+                args = ["--target", str(target), "--skills", "project-brief",
+                        "--harness", harness]
+                result = run(args)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                destination = target / directory / "skills"
+                self.assertEqual({p.name for p in destination.iterdir() if p.is_dir()},
+                                 {"project-brief"})
+                for relative in ("SKILL.md", "references/synthesis.md", "assets/brief-template.md"):
+                    self.assertEqual((destination / "project-brief" / relative).read_bytes(),
+                                     (REPO / "skills/project-brief" / relative).read_bytes())
+                self.assertIn("up-to-date: project-brief", run(args).stdout)
+                victim = destination / "project-brief" / "references/synthesis.md"
+                custom = victim.read_text() + "\nTeam customization\n"
+                victim.write_text(custom)
+                conflict = run(args)
+                self.assertEqual(conflict.returncode, 3, conflict.stdout + conflict.stderr)
+                self.assertEqual(victim.read_text(), custom)
+                forced = run([*args, "--force"])
+                self.assertEqual(forced.returncode, 0, forced.stdout + forced.stderr)
+                self.assertNotIn("Team customization", victim.read_text())
+                for relative, content in preserved.items():
+                    self.assertEqual((target / relative).read_text(encoding="utf-8"), content)
 
     def test_skill_md_and_scripts_survive(self):
         run(["--target", str(self.tmp), "--skills", "project-map", "--harness", "generic"])

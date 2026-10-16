@@ -58,7 +58,7 @@ class TestCreatorValidation(unittest.TestCase):
         self.assertEqual(self.calls.read_text().splitlines(), [
             f"anthropic:{REPO / 'skills' / name}" for name in ("project-audit", "project-map")])
 
-    def test_all_four_skills_checked_by_both_creators(self):
+    def test_all_discovered_skills_checked_by_both_creators(self):
         for name in ("anthropic", "openai"):
             self.creator(name, "print(skill.name)\n")
         r = subprocess.run(
@@ -170,6 +170,7 @@ class TestValidate(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("project-audit", r.stdout)
         self.assertIn("project-map", r.stdout)
+        self.assertIn("project-brief", r.stdout)
         self.assertIn("result: OK", r.stdout)
 
     def test_new_unrelated_skill_discovered(self):

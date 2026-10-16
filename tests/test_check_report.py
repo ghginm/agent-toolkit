@@ -76,6 +76,57 @@ class CheckReportCase(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("ml.md", r.stdout)
 
+    def test_summary_tables_and_handoff_references_do_not_duplicate_findings(self):
+        summary = """## Executive summary
+The sampled configuration has one significant coupling risk.
+
+## Findings at a glance
+| ID / detail | Priority | Confidence | Evidence | Status |
+|---|---|---|---|---|
+| [AUD-ARCH-001](#aud-arch-001--config-couples-everything) | P1 | high | verified-static | draft |
+
+## Coverage and evidence
+Inspected: `config.py::CONFIG`. Executed: not run; static review only.
+
+## Sound areas to preserve
+No sound area was established in scope.
+
+## First priorities
+1. AUD-ARCH-001 after acceptance; see the finding for validation.
+
+"""
+        self.write("index.md", GOOD_INDEX + summary)
+        self.write("architecture.md", GOOD_ARCH.replace("### AUD-ARCH-001", summary + "### AUD-ARCH-001", 1)
+                   + "\n- Tests/verification: see AUD-ARCH-001 Validation.\n")
+        self.write("ml.md", GOOD_ML)
+        r = self.check()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("findings checked: 2; problems: 0", r.stdout)
+
+    def test_summary_first_report_with_no_findings_passes(self):
+        self.write("index.md", GOOD_INDEX.replace("architecture, ml", "architecture"))
+        self.write("architecture.md", """# Audit — architecture
+## Executive summary
+No significant findings in the inspected sample; no execution was performed.
+## Findings at a glance
+No significant findings.
+## Coverage and evidence
+Inspected: `config.py::CONFIG`. Not inspected: runtime consumers.
+## Sound areas to preserve
+None established in scope.
+## First priorities
+No action justified by this audit.
+## Findings
+None.
+## Watch items / unknowns
+Runtime behavior is unknown; inspect consumers before drawing conclusions.
+## Coding agent handoff
+No implementation is proposed.
+""")
+        r = self.check()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("findings checked: 0; problems: 0", r.stdout)
+
     def test_missing_run_dir_usage_error(self):
         r = subprocess.run([sys.executable, str(SCRIPT), "--project", str(self.proj),
                             "--run", str(self.proj / "nope")], capture_output=True, text=True)

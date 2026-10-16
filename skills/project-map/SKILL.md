@@ -1,6 +1,6 @@
 ---
 name: project-map
-description: "Create, consult, incrementally update, and validate a hierarchical agent-oriented map of a repository (L0-L3 cards under .agent/project-map/) so agents navigate a codebase without re-exploring it. Use when the user asks to map, index, or document a repository for coding agents, complains that agents keep rediscovering the codebase or burning context on reconnaissance, wants structure docs refreshed, validated, or repaired after code drift, or before planning a multi-file change in a repo that has .agent/project-map/ (consult and route proactively, even when the word 'map' is never said). Also use after changes to interfaces, entrypoints, modules, or boundaries to keep cards accurate. Not for human-facing diagrams or wiki documentation."
+description: "Create, consult, incrementally update, and validate a hierarchical agent-oriented map of a repository (L0-L3 cards under .agent/project-map/) so agents navigate a codebase without re-exploring it. Use when the user asks to map, index, or document a repository for coding agents, complains that agents keep rediscovering the codebase or burning context on reconnaissance, wants structure docs refreshed, validated, or repaired after code drift, or before planning a multi-file change in a repo that has .agent/project-map/ (consult and route proactively, even when the word 'map' is never said). Also use after changes to interfaces, entrypoints, modules, or boundaries to keep cards accurate. Not for human-facing onboarding, project overviews, status or pipeline summaries, diagrams, or wiki documentation."
 license: MIT
 metadata:
   author: agent-toolkit
@@ -14,6 +14,17 @@ Maintain a navigable, source-cited map of a repository under `.agent/project-map
 The map's cardinal rule: it is a claim about the code at a revision, never the authority on the code. Even a fresh card can be incomplete or wrong — the implementing agent must still read the touched source and its callers.
 
 Installing this skill alone does not guarantee routine map consultation. Use appropriate project agent instructions (the L0 pointer below) or explicit skill invocation; discovery and automatic invocation depend on the harness.
+
+## Audience and optional handoff
+
+Keep this map agent-facing: routing and source-backed cards, not a human onboarding
+or status document. For a human overview, pipeline explanation, or synthesis, use
+`project-brief` when available; its outputs belong under `docs/project-brief/`.
+An optional Map → Audit → Brief workflow reuses project artifacts, not sibling
+skill resources. Every skill works independently. A consumer starts with L1,
+opens only relevant L2/L3 cards, and verifies selected claims against current
+source. A stale card is a refresh lead, never verified evidence; do not turn
+audit recommendations into implemented map facts.
 
 ## Bundled command paths
 

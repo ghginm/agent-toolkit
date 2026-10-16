@@ -33,6 +33,26 @@ rules across a skill's body and references. The deliberate exception is small
 cross-skill contracts: duplicate them to preserve standalone use, then keep
 all affected copies and [architecture](architecture.md#shared-contracts) synchronized.
 
+## Project navigation, audits, and human briefs
+
+Keep audience boundaries explicit: `project-map` serves agent routing,
+`project-audit` diagnoses with evidence, and `project-brief` explains the project
+to humans. Preserve their [optional handoff](architecture.md#optional-map--audit--brief-workflow)
+without adding cross-skill resource reads or mandatory sequencing. Reuse an
+existing map via L1 → selected cards → current source, not a bulk copy.
+
+Keep agent artifacts under `.agent/project-map/` and `.agent/audits/<run-id>/`;
+keep human `README.md`, `pipeline.md`, and `roadmap.md` outputs under
+`docs/project-brief/`. Maintain the evidence core in frontmatter. Human labels
+map to `verified-static`, `verified-executed`, `inferred`, `proposed`, and prose
+`unknown`; stale map content requires refresh or reinspection, not a verified
+label. Do not promote audit proposals into current-state descriptions.
+
+When changing this integration, check standalone discovery/installation, both
+standard profiles, the README catalog/options, and installation examples. Keep
+`agent-efficiency` and `tidy-dev` independent and outside those profiles; policy
+and instruction-file changes remain manual opt-in, never installer side effects.
+
 ## Metadata contract
 
 Use frontmatter delimited by `---`. Required fields are `name` and

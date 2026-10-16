@@ -19,9 +19,9 @@ python tools/install.py --target /absolute/path/to/project --skills project-map 
 
 | Parameter | Available values | Usage |
 |---|---|---|
-| `--skills` | `all` (default), `project-audit`, `project-map`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
+| `--skills` | `all` (default), `project-audit`, `project-map`, `project-brief`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
 | `--harness` | `generic` (default), `codex`, `claude`, `copilot`, `devin` | Choose one destination convention |
-| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles currently select `project-audit` and `project-map` |
+| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles select `project-audit`, `project-map`, and `project-brief` |
 
 Without either selector, the defaults are `--skills all --profile all`.
 An explicit `--skills` or `--profile` limits installation to that selection;
@@ -31,6 +31,22 @@ alone selects the union of all `profiles/*.json` skill lists, whereas
 `--skills all` selects every discovered skill, including those outside profiles.
 Additional flags are listed under
 [Options and defaults](#options-and-defaults).
+
+### Human-facing project briefs
+
+`project-brief` is an ordinary discovered skill, installable alone or through
+either standard profile. For a brief-only installation:
+
+```bash
+python tools/install.py --target /absolute/path/to/project --skills project-brief
+```
+
+Then ask the agent, for example: "Explain this project for a new teammate;
+summarize its pipeline, current status, and proposed next steps." The skill
+writes human outputs under `docs/project-brief/`, not `.agent/`. Installing it
+does not generate a brief or run an audit. Map → Audit → Brief is an
+[optional workflow](architecture.md#optional-map--audit--brief-workflow), not an
+installation prerequisite; missing artifacts do not block direct source review.
 
 ### Workflow and local tidying skills
 
@@ -43,8 +59,9 @@ Select either independently with `--skills`, or use the all-skills command above
 | `tidy-dev` | "Would a focused tidy simplify this change? Choose tidy first, afterward, or no tidy." |
 
 Invocation syntax and automatic discovery depend on the client. These skills
-do not require each other, telemetry APIs, or the audit/map skills. Existing
-profiles still select only audit and map; installation is not continuous review.
+do not require each other, telemetry APIs, or the audit/map skills. Both standard
+profiles select audit, map, and brief, not these two skills; installation is not
+continuous review.
 
 ## Options and defaults
 
@@ -112,7 +129,8 @@ source and destination fingerprints with the recorded installation.
 `--force` permits replacement of a conflicting **whole selected skill
 directory**, deleting local edits and locally added files inside it. Review or
 back up those changes first. Unselected skill directories, duplicate copies,
-project source, `.agent/` artifacts, and `AGENTS.md`/`CLAUDE.md` are not replaced.
+project source, `.agent/` artifacts, `docs/project-brief/` outputs, and
+`AGENTS.md`/`CLAUDE.md` are not replaced.
 The destination lock is installer bookkeeping, not a dependency resolver.
 
 Exit codes: **0** success, **1** validation problems, **2** usage or selection

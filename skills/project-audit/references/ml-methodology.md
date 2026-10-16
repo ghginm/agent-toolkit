@@ -75,7 +75,7 @@ Methodology problems go here even when they live in code structure: leakage *is*
 ## 7. Handoff shape
 
 Separate two tiers of proposals explicitly:
-- **Justified now** — fixes whose superiority doesn't depend on new evidence (e.g., fitting the scaler inside the CV loop): touch points, expected metric movement direction, and which tests/evals to run.
-- **Experiment first** — changes needing validation: the experiment protocol (split to use, metric, baseline, guardrails such as latency or slice performance), and the decision rule for adopting the result.
+- **Justified now** — fixes whose superiority doesn't depend on new evidence (e.g., fitting the scaler inside the CV loop): touch points, expected metric movement direction (label inference), and references to the finding's tests/evals. Implementation still requires acceptance.
+- **Experiment first** — changes needing validation: reference the finding's Decisive experiment for the protocol (split, metric, baseline, guardrails such as latency or slice performance); state the adoption decision rule there and link it instead of repeating the protocol.
 
-Include: model/feature/data/eval/config files touched; invariants ("training and serving must consume the same feature builder"); leakage and regression risks if the change is done partially; and approval-needed flags (anything changing the dataset, the metric, or retraining cost).
+Use the template's common handoff fields for model/feature/data/eval/config touch points and observed invariants ("training and serving must consume the same feature builder"). Add leakage and regression risks if the change is done partially, and approval-needed flags (anything changing the dataset, the metric, or retraining cost). Route `research-gap` findings to their resolving question/evidence rather than an implementation task. Keep the eight-step reasoning chain in each finding, not duplicated in the handoff.

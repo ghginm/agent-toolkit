@@ -1,0 +1,22 @@
+[
+  {"query": "A teammate joins Monday. Explain what this repo does, how it runs, its gaps, and next steps in an onboarding guide.", "expected": "project-brief"},
+  {"query": "Turn .agent/audits/last-run/ and the existing project map into a concise guide our product engineer can read.", "expected": "project-brief"},
+  {"query": "Refresh docs/project-brief after our scoring pipeline changed; preserve unrelated sections.", "expected": "project-brief"},
+  {"query": "I need to understand this project: architecture, implemented capabilities, unverified claims, and priorities.", "expected": "project-brief"},
+  {"query": "Explain the existing ingestion-to-report pipeline for a new team member, with a diagram and current versus target design.", "expected": "project-brief"},
+  {"query": "Make a human-facing overview of our churn prototype and explain the three major risks without copying the audit.", "expected": "project-brief"},
+  {"query": "Summarize the project's development status and documented past decisions for onboarding, not another audit.", "expected": "project-brief"},
+  {"query": "We have no map or audit. Create readable project documentation from README and selected source.", "expected": "project-brief"},
+  {"query": "Audit the architecture and methodology of this repository and produce evidence-grounded findings with coding handoffs.", "expected": "project-audit"},
+  {"query": "Evaluate whether our temporal splits leak future information and whether our experiment conclusions are defensible.", "expected": "project-audit"},
+  {"query": "Find design problems and assess production readiness; cite source and distinguish static evidence from executed tests.", "expected": "project-audit"},
+  {"query": "Create an L0-L3 repository map so coding agents can navigate without rediscovering every module.", "expected": "project-map"},
+  {"query": "Repair stale .agent/project-map cards after interfaces moved; preserve untouched card baselines.", "expected": "project-map"},
+  {"query": "Before planning a multi-file implementation, route through the existing module cards to relevant source.", "expected": "project-map"},
+  {"query": "Document this repository specifically for coding agents with token-efficient task-to-module routing.", "expected": "project-map"},
+  {"query": "Explain only how app/core.py::summarize handles an empty list, not the whole project.", "expected": "none"},
+  {"query": "Fix the one failing invoice-summary test and add a regression; no documentation work requested.", "expected": "none"},
+  {"query": "Rerun python -m unittest discover -s tests after my latest edit.", "expected": "none"},
+  {"query": "Review only this PR diff for bugs, not the architecture of the whole project.", "expected": "none"},
+  {"query": "Implement an extra report column in app/report.py; there is no existing map and I did not request a guide.", "expected": "none"}
+]

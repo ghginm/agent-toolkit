@@ -10,11 +10,12 @@ tools for validation and installation.
 |---|---|---|
 | [project-audit](skills/project-audit/SKILL.md) | Project architecture and methodology audits | Software / ML |
 | [project-map](skills/project-map/SKILL.md) | Agent-oriented codebase navigation | General |
+| [project-brief](skills/project-brief/SKILL.md) | Human onboarding, project overview, status, pipeline, and synthesis | General |
 | [agent-efficiency](skills/agent-efficiency/SKILL.md) | Diagnose workflow waste, reuse procedures, review available usage | Development workflows |
 | [tidy-dev](skills/tidy-dev/SKILL.md) | Choose worthwhile local structural improvements around a change | Coding / diff review |
 
 Optional [focused-changes policy](policies/focused-changes.md): concise coding
-instructions to incorporate manually, not a third skill or an automatic hook.
+instructions to incorporate manually, not a skill or an automatic hook.
 
 ## Quick start
 
@@ -34,9 +35,9 @@ python tools/install.py --target /absolute/path/to/project --skills project-map 
 
 | Parameter | Available values | Usage |
 |---|---|---|
-| `--skills` | `all` (default), `project-audit`, `project-map`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
+| `--skills` | `all` (default), `project-audit`, `project-map`, `project-brief`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
 | `--harness` | `generic` (default), `codex`, `claude`, `copilot`, `devin` | Choose one destination convention |
-| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles currently select `project-audit` and `project-map` |
+| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles select `project-audit`, `project-map`, and `project-brief` |
 
 Without either selector, the defaults are `--skills all --profile all`.
 An explicit `--skills` or `--profile` limits installation to that selection;
@@ -70,6 +71,21 @@ or an unlisted client, confirm its supported repository path and use the
 The installer copies files; it does not activate clients or edit `AGENTS.md` or
 `CLAUDE.md`.
 
+
+## Optional Map → Audit → Brief workflow
+
+Use [project-map](skills/project-map/SKILL.md) for agent navigation,
+[project-audit](skills/project-audit/SKILL.md) for evidence-backed diagnosis, and
+[project-brief](skills/project-brief/SKILL.md) for human onboarding, overviews,
+status, pipeline explanations, and synthesis. This sequence is optional: each
+skill works independently from source without requiring the others.
+
+Map cards stay in `.agent/project-map/`, audit evidence in
+`.agent/audits/<run-id>/`, and human outputs in `docs/project-brief/`
+(`README.md`, `pipeline.md`, `roadmap.md`). Start with the map's L1 index and
+read only relevant cards; verify claims against current source rather than
+copying a whole map or promoting stale cards to evidence. Keep proposals out of
+current-state descriptions. See [the handoff and evidence contract](docs/architecture.md#optional-map--audit--brief-workflow).
 
 ## Repository layout
 

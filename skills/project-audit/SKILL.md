@@ -9,7 +9,7 @@ metadata:
 
 # Project Audit
 
-Audit a project and produce evidence-cited findings with coding-agent handoffs. Evaluate and recommend only — never refactor, fix, or modify project source as part of an audit. Deliverables are Markdown reports under `.agent/audits/`.
+Audit a project and produce summary-first, evidence-cited reports with coding-agent handoffs. Evaluate and recommend only — never refactor, fix, or modify project source as part of an audit. Deliverables are Markdown reports under `.agent/audits/`; a map or downstream brief is optional, not a prerequisite or an automatic next step.
 
 Three modes share one discovery pass, one evidence standard, and one report contract, while keeping specialized analytical methodology per mode. Load only the reference for the modes actually selected.
 
@@ -101,17 +101,19 @@ Write to the audited project:
 
 ```
 .agent/audits/<run-id>/            # run-id: YYYYMMDD-HHMM + modes, e.g. 20261015-1430-all
-  index.md                         # ALWAYS: run manifest — modes, tier, baseline, coverage plan
+  index.md                         # always: summary + run manifest — modes, tier, baseline, coverage
   architecture.md                  # only if architecture mode ran
   ml.md                            # only if ml mode ran
   exploratory.md                   # only if exploratory mode ran
 ```
 
-Use `assets/report-template.md` — the finding block, index and handoff skeletons, lifecycle metadata, and priority definitions all live there canonically. `index.md` additionally carries the cross-mode summary (top findings per mode, cross-cutting observations by ID) when 2+ modes ran; per-mode reports stay independently usable. Every finding starts as `status: draft` — findings are proposals until reviewed; remember that an accepted recommendation is not an implemented feature.
+Use `assets/report-template.md` — the finding block, index and handoff skeletons, lifecycle metadata, and priority definitions all live there canonically. Lead the index and each mode report with an executive summary and an at-a-glance table, followed by scoped coverage/evidence, verified sound areas, and first priorities linked to finding IDs. Keep evidence status separate from confidence; mirror detailed metadata without promoting an inference or proposal to fact. State when no significant findings or supported priorities emerged rather than padding the report.
+
+`index.md` additionally carries cross-mode observations by ID when 2+ modes ran; link to detailed reports instead of repeating their reasoning. Per-mode reports stay independently usable, including their own coverage limits and command results (or why nothing ran). Every finding starts as `status: draft` — findings are proposals until reviewed; remember that an accepted recommendation is not an implemented feature. This presentation guidance does not invalidate existing reports or add checker requirements.
 
 ### 6. Agent coding handoff
 
-Every mode report ends with a **Coding agent handoff**; the skeleton is the template's handoff block, and each mode's reference ("Handoff shape") adds what is specific to that analysis. Two invariants no skeleton enforces: a handoff names real files/symbols with citations, separates verified impact from `inferred`, and tells the implementing agent to read the cited code first — the handoff supplements reading, never replaces it.
+Every mode report ends with a **Coding agent handoff**; the skeleton is the template's handoff block, and each mode's reference ("Handoff shape") adds what is specific to that analysis. Keep reasoning and validation protocols in findings; reference them by ID and add only implementation-specific boundaries, sequencing, and approvals in the handoff. Preserve cited files/symbols, distinguish verified impact from `inferred`, and direct the implementing agent to read cited code first — the handoff supplements reading, never replaces it. With no actionable findings, retain the section and say no implementation is proposed.
 
 ### 7. Finish the run
 
@@ -126,6 +128,7 @@ Use the absolute variables established in §1. Replace `20261015-1430-all` with 
 Then confirm the judgment items:
 
 - [ ] Coverage section names uninspected areas; no absence claims beyond the sample (§3).
+- [ ] Summaries and glance tables agree with detailed IDs, metadata, and evidence; sound areas have citations and first priorities preserve acceptance/experiment gates (§5).
 - [ ] Every recommendation passed the gate (§4), with trade-offs and a simpler alternative stated.
 - [ ] `proposed` never appears as current state; inferred rationale labeled (§3).
 - [ ] Findings all `status: draft` (lifecycle is edited later through review).
