@@ -1,6 +1,6 @@
 ---
 name: project-brief
-description: "Create or refresh human-readable project overviews, architecture and pipeline guides, and decision-oriented roadmaps. Use when asked to understand or explain a project, onboard a teammate, describe development status or an end-to-end pipeline, summarize problems and next steps, or turn technical project maps and audits into understandable documentation, even without the word 'brief'. Not for conducting a new audit, building an agent-oriented repository map, implementing fixes, or explaining one isolated function."
+description: "Create or refresh human-readable project overviews and deep-dive architecture/design review packs. Use when asked to understand or explain a project, onboard a teammate, describe status or an end-to-end pipeline, build comprehensive project understanding before architecture planning, or synthesize documentation, maps, audits, and prior requirements. Select compact overview or analytical deep-dive from intent, even without the word 'brief'. Not for conducting a new audit, preparing a meeting agenda, discussion questions or decision matrix, facilitating a workshop, building an agent-oriented map, implementing fixes, or explaining one isolated function."
 license: MIT
 metadata:
   author: agent-toolkit
@@ -16,6 +16,18 @@ Work independently: maps, audits, other skills, and external knowledge bases
 are optional inputs, never prerequisites.
 
 ## 1. Establish scope and baseline
+
+Select depth from intent; an explicit mode wins:
+
+| Depth | Select when | Shape |
+|---|---|---|
+| `overview` (default) | Quick understanding, ordinary onboarding/status, or ambiguous depth | Compact existing three-document guide |
+| `deep-dive` | Comprehensive project understanding, architecture planning, detailed legacy onboarding, or understanding needed for a team design discussion | Modular review pack with stage analysis, alternatives, requirements, and open decisions |
+
+Do not require special trigger words, CLI flags, or configuration. A request to
+prepare understanding for discussion implies depth, not permission to run the
+meeting, create slides, or decide for the team. Read `references/deep-dive.md`
+only for deep-dive; keep the compact default otherwise.
 
 Confirm the target, audience, goals, constraints, and existing brief. Read project
 instructions and preserve authored material. Record the actual generation date,
@@ -73,7 +85,7 @@ Never invent metrics, completion percentages, historical decisions, or intent.
 
 ## 4. Draft dashboard first, explanations second
 
-Use `assets/brief-template.md` as a flexible three-document skeleton. Replace
+For overview, use `assets/brief-template.md` as a flexible three-document skeleton. Replace
 placeholders and adapt stages to the actual system; do not impose an ML pipeline
 on a CLI, service, library, or other project.
 
@@ -83,8 +95,8 @@ on a CLI, service, library, or other project.
 | `pipeline.md` | How does it work end to end? | Real stages, inputs/outputs/connections, current behavior and limits; separate target architecture; replaceable/experimental components; useful alternatives |
 | `roadmap.md` | What should we do next, and why? | Fix now / experiment first / future considerations / open questions; benefits, dependencies, immediate action, trade-offs; documented prior decisions/experiments |
 
-Aim for an overview readable in 2–3 minutes (roughly 400–700 words, shorter for
-small projects). Put concise overview → tables/diagrams → short explanation →
+For either depth, keep README an effective 2–3-minute entry point; scale detail
+to the project rather than a word quota. Put concise overview → tables/diagrams → short explanation →
 optional detail. Use portable Mermaid with a readable Markdown flow fallback;
 separate current and proposed diagrams or label proposed nodes unmistakably.
 Keep stage explanations readable without opening the audit. Avoid large code
@@ -102,7 +114,7 @@ code change need not rewrite the guide. Do not create synchronization machinery.
 
 Before finishing:
 
-- Read the three documents as a newcomer: can the reader explain purpose, flow,
+- Read the resulting pack as a newcomer: can the reader explain purpose, flow,
   built capabilities, gaps, the most important problems, next actions, current
   versus target design, and where deeper evidence lives without opening audits?
 - Cross-check consequential claims and diagram edges against inspected evidence.

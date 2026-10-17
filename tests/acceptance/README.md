@@ -51,4 +51,11 @@ Focused checks for `agent-efficiency`, `tidy-dev`, and the optional policy live 
 [extensions-results.md](extensions-results.md). They use small supplied-session
 scenarios and the existing fixture, not a new benchmark harness.
 
-`results.md` in this directory records actual executed runs with dates and evidence. Absence of a scenario there means it was NOT run — check `results.md` before trusting any capability claim.
+Focused overview/deep-dive and independent discussion/consolidation checks live
+in [review-discussion.md](review-discussion.md), with executed evidence in
+[review-discussion-results.md](review-discussion-results.md). They distinguish
+description routing, packaging mechanics, and generated-document review.
+
+The scenario-specific results files record actual executed runs with evidence.
+Absence of a scenario from those records means it was NOT run; check the relevant
+record before trusting a capability claim.

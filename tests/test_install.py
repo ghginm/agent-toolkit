@@ -76,15 +76,15 @@ class InstallCase(unittest.TestCase):
         r = run(["--target", str(self.tmp), "--profile", "software-development"])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
-                         {"project-audit", "project-map", "project-brief"})
+                         {"project-audit", "project-map", "project-brief", "decision-workshop"})
 
     def test_explicit_skills_and_profile_are_combined_once(self):
         r = run(["--target", str(self.tmp), "--skills", "project-map,tidy-dev,tidy-dev",
                  "--profile", "ml-development"])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual({p.name for p in self._dest(".agents").iterdir() if p.is_dir()},
-                         {"project-audit", "project-map", "project-brief", "tidy-dev"})
-        self.assertEqual(r.stdout.count("[ok] installed:"), 4)
+                         {"project-audit", "project-map", "project-brief", "decision-workshop", "tidy-dev"})
+        self.assertEqual(r.stdout.count("[ok] installed:"), 5)
 
     def test_default_discovers_new_skill_without_profiles(self):
         r = run(["--root", str(FIX / "skillset"), "--target", str(self.tmp)])
@@ -130,6 +130,7 @@ class InstallCase(unittest.TestCase):
             self.assertTrue((t / sub / "skills" / "project-audit" / "SKILL.md").is_file())
             self.assertTrue((t / sub / "skills" / "project-map" / "SKILL.md").is_file())
             self.assertTrue((t / sub / "skills" / "project-brief" / "SKILL.md").is_file())
+            self.assertTrue((t / sub / "skills" / "decision-workshop" / "SKILL.md").is_file())
 
     def test_dry_run_writes_nothing(self):
         r = run(["--target", str(self.tmp), "--skills", "project-map", "--harness", "generic", "--dry-run"])

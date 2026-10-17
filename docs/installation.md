@@ -19,9 +19,9 @@ python tools/install.py --target /absolute/path/to/project --skills project-map 
 
 | Parameter | Available values | Usage |
 |---|---|---|
-| `--skills` | `all` (default), `project-audit`, `project-map`, `project-brief`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
+| `--skills` | `all` (default), `project-audit`, `project-map`, `project-brief`, `decision-workshop`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
 | `--harness` | `generic` (default), `codex`, `claude`, `copilot`, `devin` | Choose one destination convention |
-| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both named profiles select `project-audit`, `project-map`, and `project-brief` |
+| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both select `project-audit`, `project-map`, `project-brief`, and `decision-workshop` |
 
 Without either selector, the defaults are `--skills all --profile all`.
 An explicit `--skills` or `--profile` limits installation to that selection;
@@ -42,11 +42,36 @@ python tools/install.py --target /absolute/path/to/project --skills project-brie
 ```
 
 Then ask the agent, for example: "Explain this project for a new teammate;
-summarize its pipeline, current status, and proposed next steps." The skill
-writes human outputs under `docs/project-brief/`, not `.agent/`. Installing it
-does not generate a brief or run an audit. Map → Audit → Brief is an
-[optional workflow](architecture.md#optional-map--audit--brief-workflow), not an
-installation prerequisite; missing artifacts do not block direct source review.
+summarize its pipeline, current status, and proposed next steps." The default
+`overview` writes `README.md`, `pipeline.md`, and `roadmap.md` under
+`docs/project-brief/`, not `.agent/`. Request `deep-dive` explicitly or ask for
+comprehensive architecture understanding, detailed onboarding, or design-discussion
+preparation to get a proportionate modular review pack. Its README remains a short
+entry point; deeper modules follow the project, not a mandatory file list.
+Ambiguous requests retain the compact default. No mode flags or configuration
+are needed. Installing the skill does not generate a brief or run an audit;
+missing map or audit artifacts do not block direct source review.
+
+### Architecture discussions and decisions
+
+`decision-workshop` is installable alone or through either standard profile:
+
+```bash
+python tools/install.py --target /absolute/path/to/project --skills decision-workshop
+```
+
+Ask: "Prepare a team architecture discussion from these design documents, with
+options, trade-offs, and decisions required." It accepts supplied architecture
+documents, proposals, requirements, or existing decision records directly; no
+prior brief, map, or audit is required. Default outputs are
+`discussion/README.md` and `discussion/decisions.md`, with user destinations
+taking precedence. Ask it to consolidate meeting notes to record supported
+agreements while preserving open questions and decision provenance.
+
+Markdown is the primary output. Slides are optional through an available
+dedicated capability, with a slide outline as fallback; no presentation dependency
+is installed. See [recommended contract examples](recommended-contract-examples.md)
+for an optional combination of independent skills, not an installation prerequisite.
 
 ### Workflow and local tidying skills
 
@@ -60,8 +85,8 @@ Select either independently with `--skills`, or use the all-skills command above
 
 Invocation syntax and automatic discovery depend on the client. These skills
 do not require each other, telemetry APIs, or the audit/map skills. Both standard
-profiles select audit, map, and brief, not these two skills; installation is not
-continuous review.
+profiles select audit, map, brief, and workshop, not these two skills; installation
+is not continuous review.
 
 ## Options and defaults
 
@@ -129,7 +154,7 @@ source and destination fingerprints with the recorded installation.
 `--force` permits replacement of a conflicting **whole selected skill
 directory**, deleting local edits and locally added files inside it. Review or
 back up those changes first. Unselected skill directories, duplicate copies,
-project source, `.agent/` artifacts, `docs/project-brief/` outputs, and
+project source, `.agent/` artifacts, `docs/project-brief/` and `discussion/` outputs, and
 `AGENTS.md`/`CLAUDE.md` are not replaced.
 The destination lock is installer bookkeeping, not a dependency resolver.
 

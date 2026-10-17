@@ -1,4 +1,4 @@
 {
-  "description": "Core skills for ML/DS development projects.",
-  "skills": ["project-audit", "project-map", "project-brief"]
+  "description": "Core skills for ML/DS project review and architecture discussion.",
+  "skills": ["project-audit", "project-map", "project-brief", "decision-workshop"]
 }

@@ -33,20 +33,38 @@ rules across a skill's body and references. The deliberate exception is small
 cross-skill contracts: duplicate them to preserve standalone use, then keep
 all affected copies and [architecture](architecture.md#shared-contracts) synchronized.
 
-## Project navigation, audits, and human briefs
+## Navigation, audits, human briefs, and decisions
 
 Keep audience boundaries explicit: `project-map` serves agent routing,
-`project-audit` diagnoses with evidence, and `project-brief` explains the project
-to humans. Preserve their [optional handoff](architecture.md#optional-map--audit--brief-workflow)
-without adding cross-skill resource reads or mandatory sequencing. Reuse an
-existing map via L1 → selected cards → current source, not a bulk copy.
+`project-audit` diagnoses with evidence, `project-brief` explains the project
+to humans, and `decision-workshop` facilitates discussion and records supported
+choices. Preserve their [artifact handoffs](architecture.md#artifact-handoffs-and-human-outputs)
+without cross-skill resource reads or mandatory sequencing. Workshops accept
+design documentation directly; briefs do not require an audit. Reuse an existing
+map via L1 → selected cards → current source, not a bulk copy. Keep optional
+combinations in [recommended contract examples](recommended-contract-examples.md),
+not a prominent README workflow or a new orchestration layer.
 
 Keep agent artifacts under `.agent/project-map/` and `.agent/audits/<run-id>/`;
-keep human `README.md`, `pipeline.md`, and `roadmap.md` outputs under
-`docs/project-brief/`. Maintain the evidence core in frontmatter. Human labels
-map to `verified-static`, `verified-executed`, `inferred`, `proposed`, and prose
-`unknown`; stale map content requires refresh or reinspection, not a verified
-label. Do not promote audit proposals into current-state descriptions.
+default overview outputs to `docs/project-brief/README.md`, `pipeline.md`, and
+`roadmap.md`. Preserve compact overview for ambiguous requests; select deep-dive
+by explicit mode or natural intent for comprehensive architecture understanding.
+Keep deep-dive modules proportional and its README a short linked entry point,
+not a mandatory large file set. Default workshop outputs to `discussion/README.md`
+and `discussion/decisions.md`; respect user destinations for both skills.
+
+Maintain existing evidence frontmatter where the map and audit require it;
+human documents need no frontmatter or new schema. Human labels map to
+`verified-static`, `verified-executed`, `inferred`, `proposed`, and prose `unknown`;
+stale map content requires refresh or reinspection, not a verified label. Do not
+promote audit proposals into current-state descriptions or external knowledge
+into evidence of repository behavior.
+
+Keep workshop statuses `Open`, `Proposed`, `Agreed`, `Deferred`, and `Rejected`
+separate from evidence statuses and audit finding lifecycle. Preserve stable
+decision IDs and provenance; recommendations or silence cannot establish
+agreement. Keep Markdown primary and slides optional, with no presentation
+dependency, automatic implementation plan, or application-code changes.
 
 When changing this integration, check standalone discovery/installation, both
 standard profiles, the README catalog/options, and installation examples. Keep

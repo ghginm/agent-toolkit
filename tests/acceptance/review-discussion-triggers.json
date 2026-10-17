@@ -1,0 +1,22 @@
+[
+  {"query":"Give a quick overview of this repository for our new teammate.","expected":"brief","depth":"overview"},
+  {"query":"Use project-brief in deep-dive mode for this codebase.","expected":"brief","depth":"deep-dive"},
+  {"query":"We need comprehensive understanding of the legacy service before architecture planning; explain stages, constraints and alternatives.","expected":"brief","depth":"deep-dive"},
+  {"query":"Explain what is built, not tested, and next in docs/project-brief; keep it short.","expected":"brief","depth":"overview"},
+  {"query":"Create detailed onboarding documentation of the full design and historical requirements, not a meeting agenda.","expected":"brief","depth":"deep-dive"},
+  {"query":"What does this project do? Write a readable project guide.","expected":"brief","depth":"overview"},
+  {"query":"Build a modular human design review pack covering architecture, current state, alternatives and requirements.","expected":"brief","depth":"deep-dive"},
+  {"query":"Use project-brief overview mode, even though this is a complex legacy project.","expected":"brief","depth":"overview"},
+  {"query":"Turn architecture.md into a team discussion guide, with major structural choices first and a decision matrix.","expected":"workshop"},
+  {"query":"Prepare design-review questions and compare persistence options for our architecture meeting.","expected":"workshop"},
+  {"query":"Update our decisions.md from these notes: SQL agreed, queue deferred, in-memory retries rejected.","expected":"workshop"},
+  {"query":"Help me facilitate the technical discussion, not write another onboarding document.","expected":"workshop"},
+  {"query":"Organize these design proposals into a Markdown meeting guide with open choices; no slides.","expected":"workshop"},
+  {"query":"Record actual agreements after the meeting without making suggestions look approved.","expected":"workshop"},
+  {"query":"Audit reliability risks directly in this repository and cite evidence for findings.","expected":"neither"},
+  {"query":"Create an agent-oriented L1/L2 navigation map of the source tree.","expected":"neither"},
+  {"query":"Implement the already agreed SQL outbox and worker, including tests.","expected":"neither"},
+  {"query":"Explain this isolated validate_payload function; no project documentation needed.","expected":"neither"},
+  {"query":"Convert this already approved storyboard into five PowerPoint slides; do not restructure content.","expected":"neither"},
+  {"query":"Review the attached PR diff for bugs, not the project architecture.","expected":"neither"}
+]
