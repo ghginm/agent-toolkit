@@ -18,6 +18,16 @@ tools for validation and installation.
 Optional [focused-changes policy](policies/focused-changes.md): concise coding
 instructions to incorporate manually, not a skill or an automatic hook.
 
+## Example workflows
+
+Want to see how these skills can work together?
+
+**[Recommended contract examples](docs/recommended-contract-examples.md)** —
+Copy-paste prompts for practical multi-skill workflows, including technical
+review → human review → team discussion.
+
+Each skill also works independently.
+
 ## Quick start
 
 Run these commands from the toolkit checkout. Replace `/absolute/path/to/project`
@@ -34,43 +44,22 @@ python tools/install.py --target /absolute/path/to/project --harness generic --l
 python tools/install.py --target /absolute/path/to/project --skills project-map --harness generic --dry-run
 ```
 
-| Parameter | Available values | Usage |
-|---|---|---|
-| `--skills` | `all` (default), `project-audit`, `project-map`, `project-brief`, `decision-workshop`, `agent-efficiency`, `tidy-dev` | All skills or one or more names, comma-separated |
-| `--harness` | `generic` (default), `codex`, `claude`, `copilot`, `devin` | Choose one destination convention |
-| `--profile` | `all` (default), `software-development`, `ml-development` | Union of all profiles or one named profile; both select `project-audit`, `project-map`, `project-brief`, and `decision-workshop` |
+**Installation notes**
 
-Without either selector, the defaults are `--skills all --profile all`.
-An explicit `--skills` or `--profile` limits installation to that selection;
-if both are supplied, their skills are combined without duplicates. Profiles
-are skill selections, not separately installed components.
-See [all installer options](docs/installation.md#options-and-defaults).
+- **Defaults:** Installs all skills unless `--skills` or `--profile` is specified.
+- **Selection:** `--skills` selects individual skills; `--profile` selects
+  predefined groups. Both can be combined; their skills are merged without duplicates.
+- **Updates:** After updating this checkout, re-run the original installation
+  command to update unmodified installations.
+- **Safety:** Local changes are preserved by default. `--force` replaces the
+  selected skill directory, including locally added files.
 
-Re-run the original install command after updating this checkout to update an
-unmodified installation. Outcomes are `installed`, `up-to-date`, `updated`, or
-`skipped-conflict`; `duplicate-warning` identifies another project-level copy.
-Conflicts retain local content and return exit code 3. `--force` replaces the
-selected skill directory, including locally added files. Other skills, project
-artifacts, and instruction files are preserved.
+The installer supports Codex, Claude, Copilot, Devin CLI, and generic Agent Skills
+destinations. Choose one location per team; installation does not activate clients.
 
-### Installer destinations
-
-These are the installer's path mappings, not a guarantee of discovery or reload
-behavior in every harness version. Choose one location per team.
-
-| `--harness` | Project scope (default) | User scope |
-|---|---|---|
-| `generic` (default) | `.agents/skills/` | `~/.agents/skills/` |
-| `codex` | `.agents/skills/` | `~/.agents/skills/` |
-| `claude` | `.claude/skills/` | `~/.claude/skills/` |
-| `copilot` | `.github/skills/` | `~/.copilot/skills/` |
-| `devin` (CLI) | `.devin/skills/` | `~/.config/devin/skills/` |
-
-The `devin` mapping targets Devin CLI, not cloud configuration. For cloud Devin
-or an unlisted client, confirm its supported repository path and use the
-[manual installation instructions](docs/installation.md#manual-installation).
-The installer copies files; it does not activate clients or edit `AGENTS.md` or
-`CLAUDE.md`.
+See [Installation & Updates](docs/installation.md) for complete
+[options](docs/installation.md#options-and-defaults), conflict handling, exit codes,
+and [destination mappings](docs/installation.md#destination-mappings).
 
 ## Repository layout
 
@@ -96,11 +85,16 @@ they do not establish live behavior for every harness. Optional upstream
 creator checks use `python tools/validate.py --creators /path/to/skill-creator/skills`
 with a PyYAML-capable interpreter. Creators are not runtime dependencies.
 
-## Further reading
+## Documentation
 
-- [Recommended contract examples](docs/recommended-contract-examples.md) — practical examples of combining skills for project reviews, technical discussions, and other workflows.
-- [Installation and updates](docs/installation.md)
-- [Architecture and shared contracts](docs/architecture.md)
-- [Contribution checklist](docs/contributing.md)
-- [Repository working rules](AGENTS.md)
-- [Acceptance procedures](tests/acceptance/README.md) and [recorded evidence](tests/acceptance/results.md); recorded runs are scoped evidence, not cross-harness certification.
+**Using the toolkit**
+
+- [Installation & Updates](docs/installation.md) — setup, profiles, destinations, and safe updates.
+
+**Developing the toolkit**
+
+- [Architecture & Contracts](docs/architecture.md) — internal design and invariants.
+- [Contributing](docs/contributing.md) — developing and maintaining skills.
+- [AGENTS.md](AGENTS.md) — repository instructions for coding agents.
+- [Testing & Acceptance](tests/acceptance/README.md) — procedures and
+  [recorded evidence](tests/acceptance/results.md), not cross-harness certification.
