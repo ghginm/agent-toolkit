@@ -7,7 +7,8 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-NAMES = ("agent-efficiency", "tidy-dev", "project-brief", "decision-workshop")
+NAMES = ("agent-efficiency", "tidy-dev", "project-brief", "decision-workshop",
+         "project-map", "project-audit")
 
 
 class WorkflowPackagingCase(unittest.TestCase):

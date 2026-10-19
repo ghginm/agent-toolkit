@@ -28,7 +28,7 @@ Use that validation command for create/validate/finish checks below. Keep both e
 1. **Recon with a budget.** Read: manifests, README/docs *as leads*, CI config, test layout, entry scripts. Get the tree 2-3 levels deep. Timebox breadth: the point is enough to partition responsibilities, not full comprehension.
 2. **Partition by responsibility.** Sketch modules: "owns X behavior, changes for Y reasons". Folders are hints, not destiny — merge or split when semantics disagree with directory layout. For each sketch, verify by reading that module's main files (code is the ground truth; a module you haven't read does not get a card).
 3. **Choose depth proportionally.** Small/calm repo: L1 + 2-4 L2. Medium: L2 per module, L3 only for triggered subflows (triggers list in map-format §5). Large/legacy: still L1 + L2 — breadth is cheap, depth per area is the expensive part; leave unmapped areas listed in L1 coverage.
-4. **Write cards from templates** (`assets/`). Citation as you go: a claim you cannot cite gets `inferred` or stays out.
+4. **Verify claims, then write cards from templates** (`assets/`). Apply the mandatory source-verification checklist loaded from SKILL.md to important L1/L2/L3 claims, tracing callers and effective config as needed. Citation as you go: a claim you cannot establish stays explicitly `inferred` or out; docs-only assertions are not verified current state.
 5. **Run `scripts/map_check.py`** against the map; fix every dead path.
 6. **Bootstrap pointer.** Show the user the directly pasteable L0 snippet (`assets/bootstrap-snippet.md`) and offer to append it to the project's agent-instructions file (`AGENTS.md`, `CLAUDE.md`, or what the harness actually reads). **This is the canonical home of the permission rule:** append only with explicit permission, only when no equivalent pointer exists, only as an addition — never overwrite or restructure that file; nothing about existing content may be removed. If the harness reads neither file type, print the snippet and ask the user which instructions location it reads. Installing the skill alone does not guarantee routine map consultation: appropriate agent instructions or explicit invocation are needed, with behavior depending on the harness.
 7. **Self-check:** routing guide covers the plausible near-term tasks; every card has honest metadata; no L3 without a stated trigger; L1 within budget.
@@ -47,7 +47,7 @@ Resume rule: if `.agent/project-map/` already exists, `create` becomes: validate
    ```
 2. Expand with judgment: for each changed *interface* (signature, data shape, exported symbol), grep importers/callers and add their cards; for changed config or test files, expand to the modules that read them. A changed-file list is not a dependency analysis.
 3. For each candidate card: re-read the cited sources, compare against what changed, and apply §update-policy below.
-4. Update `verified_revision`/`verified_at` only for cards you actually re-verified. If the working tree is dirty around a card's sources, add the dirty caveat.
+4. Advance `verified_revision`/`verified_at` only after rechecking all important current-state claims covered by the card stamp. For partial repairs, retain the older card baseline and annotate the repaired claims' newer baseline/scope in Verification. If the working tree is dirty around inspected sources, name those paths. Follow the mandatory source-verification checklist; uninspected cards keep their metadata.
 5. New module appears? Create its L2 + an L1 routing row + L1 module table row. Deleted/merged module? Remove card, fix L1 and inbound links (map_check will flag stragglers).
 6. Finish: run map_check; report which cards changed and which were left alone deliberately.
 
@@ -87,7 +87,7 @@ When any workflow finds documentation contradicting code (or being unverifiable)
 
 1. Inspect the relevant code until behavior is established (cite what settled it).
 2. Determine the discrepancy's true scope: this line only? whole card? related cards sharing the claim? (grep card links + claims.)
-3. Repair when you have write authorization: fix claims, set honest status, bump `verified_revision` for what you actually rechecked. Mark genuinely broken-but-unfixed cards `status: stale` with a one-line note — a stale marker is more useful than silent rot.
+3. Repair when you have write authorization: fix affected claims and set honest status. Advance the card baseline only after full important-claim revalidation; partial repairs retain the old stamp with newer claim-level evidence in Verification. Mark genuinely broken-but-unfixed cards `status: stale` with a one-line note — a stale marker is more useful than silent rot.
 4. Report residual uncertainty: what remains unchecked, what could also be wrong by association.
 5. Never "fix" by trusting the old doc's narrative (see step 1), and never trust old documentation because it carries a valid SHA.
 
@@ -104,5 +104,5 @@ Optional both ways, never required:
 
 - An existing map (`.agent/project-map/`) is discovery acceleration for `project-audit` — its L1 routing + module cards shorten the audit's reconnaissance, but every claim reused must be re-verified (the map can be stale or wrong).
 - Accepted audit findings become map input ONLY as `Decisions & proposed direction` entries (linked by finding ID). The map's current-state sections stay implementation-only.
-- When a change implementing an accepted finding lands, update the affected cards from the implementation (code), then mark the finding `implemented-verified` on the audit side.
-- Finding IDs (AUD-...) and card metadata statuses use the same vocabulary — the shared conventions are duplicated inside each skill's SKILL.md on purpose, so each skill stays independently installable.
+- When a change implementing an accepted finding lands, update affected cards from current code. Leave the audit lifecycle unchanged: an audit update is a separately authorized follow-up and requires implementation evidence plus the finding-specific validation or decisive experiment result before `implemented-verified`. Otherwise report the remaining verification and handoff.
+- Finding IDs (AUD-...) and shared evidence conventions are duplicated inside each skill on purpose, so each stays independently installable. Finding lifecycle and map metadata status remain distinct.

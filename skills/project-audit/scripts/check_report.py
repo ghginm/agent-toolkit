@@ -84,7 +84,7 @@ def check_run(project: Path, run_dir: Path):
     # cited paths must exist in the project (audit artifacts under .agent/ included)
     all_text = "\n".join((p.read_text(errors="replace") for p in run_dir.glob("*.md")))
     for cite in sorted(set(CITE_RE.findall(all_text))):
-        c = cite.strip("./")
+        c = cite  # Leading dots are part of paths such as .agent/project-map/.
         if (project / c).exists() or (run_dir / Path(c).name).exists():
             continue
         problems.append(f"cited path does not exist: {c}")

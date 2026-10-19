@@ -28,7 +28,7 @@ Optional additions when they earn their keep: `tests:`, `config:`, `depends-on:`
 
 Status vocabulary and honesty rules are canonically defined in SKILL.md. Card-authoring specifics on top of them:
 
-- A claim sourced from a README: cite the README as `sources` entry and keep that claim labeled `inferred` until code confirms it.
+- A README is evidence of a documented promise, not implemented behavior. Cite it as such; inspect current implementation before verifying the behavior. Follow the source-verification checklist loaded from SKILL.md for callers, config, absence claims, and partial card baselines.
 - `verified-executed` requires the exact command + observed result inline in the card's Verification section (e.g., `pytest tests/features -q → 12 passed, <date>`), and covers only those claims.
 - `proposed` as card status is reserved for whole cards about intended future structure; proposed content for an existing module goes in its `Decisions & proposed direction` section instead.
 - `stale` cards name at the top what drifted; repair via drift recovery rather than letting them rot.
@@ -37,7 +37,7 @@ Status vocabulary and honesty rules are canonically defined in SKILL.md. Card-au
 ## 2. Claim citation rules
 
 - Format: `path::symbol` or `path:line` (line numbers are hints; symbols are durable).
-- Anything a card asserts about behavior, contracts, or dependencies cites a source path. Prose about obvious structure ("src/ contains the library") needs no citation.
+- Anything a card asserts about behavior, contracts, or dependencies cites inspected source supporting that specific claim. A source list is not blanket evidence for the card. Prose about obvious structure ("src/ contains the library") needs no citation.
 - Navigation content ("where to look for X") points at files/symbols — that IS the citation.
 - No secrets, tokens, connection strings, or personal paths in cards. For sensitive areas: describe the mechanism's location, not its contents.
 
@@ -63,10 +63,11 @@ Budget (SKILL.md table): target a few hundred tokens; if L1 swells, it is duplic
 2. **Key entrypoints & symbols** — table: symbol → file::line-ish → what calls it / what it calls. The "where to look for a given change" list goes here or in a dedicated bullet.
 3. **Upstream / downstream** — dependencies verified by reading imports/call sites (cite); note whether verified or inferred.
 4. **Contracts** — data/API shapes crossing the boundary (keys, types, units, ordering assumptions, schema source). Contracts are where drift hurts most: be specific and cited.
-5. **Configuration & tests** — config keys it reads, test files covering it (paths).
+5. **Configuration & tests** — effective config path (defaults/overrides to consumer), test locations and assertions inspected; distinguish test existence, static inspection, and executed results.
 6. **Caveats & invariants** — gotchas, assumptions that break, known sharp edges, why-an-obscure-choice-exists (label inferred rationale if undocumented).
 7. **Decisions & proposed direction** *(optional)* — accepted audit findings/plans with links; never merged into sections 1-6.
 8. **Where to look for X** — 3-8 rows of task → file/symbol.
+9. **Verification** — inspected claims/paths and baseline, uninspected boundaries, tests read, commands/results or not run. Partial repairs keep the older card stamp with newer evidence scoped to changed claims.
 
 Do not enumerate every file. A module with 30 files gets the 6 that matter and a one-line description of the rest ("schemas/ holds per-domain table definitions").
 

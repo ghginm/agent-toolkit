@@ -23,6 +23,7 @@ Copy the skeletons below into the audit report. Lead with a short decision summa
 ## Coverage
 Inspected: <areas/paths and depth>. Not inspected (deliberate): <areas + reason>.
 Evidence collected: <source sample; commands + actual results, or explicitly not executed and why>. State mode omissions (for example, no ML component) and their reason. Link mode reports for detailed coverage rather than duplicating it.
+Verification limits: <claims/flows checked against current source; test files merely located versus assertions read; structural checker result, not semantic proof>.
 
 ## Sound areas to preserve
 - <verified strength + citation or report-section link; limit the claim to what was checked, or say none established in scope>
@@ -61,7 +62,9 @@ Mode: <mode> · Run: <run-id> · Tier: <tier> · Baseline: <git sha or "no-git">
 
 ## Coverage and evidence
 Inspected: <mode-specific paths, symbols, flows, tests, and depth>.
+Boundary/config coverage: <flows checked; link finding/sound-area traces rather than repeating their evidence>.
 Not inspected: <areas + reason; state limits on absence claims>.
+Tests located/read: <paths located; assertions/setup/mocks inspected and actual scope, or not read>.
 Executed: <command + actual result, or not executed + reason>.
 Evidence limits: <what remains inferred or unknown; no fabricated coverage percentages>.
 
@@ -80,7 +83,8 @@ status: draft · priority: <P0-P3> · confidence: <high|medium|low — one-line 
 
 <!-- The evidence field takes one of those three: it describes how the *observed* claim was established. `proposed` is the role of the whole Proposed action (never of Observed); audit-only `unknown` items go to Watch items below, not into a finding. -->
 
-- **Observed:** <what the code does today, cited: path::symbol / path:line / command+result>
+- **Observed:** <what current code does, cited: path::symbol / path:line / command+result; include producer → consumer or defaults → overrides → use traces when consequential>
+- **Evidence scope:** <limits specific to this finding; for absence claims, searched paths/equivalent mechanisms; link shared baseline/commands above and distinguish static from executed parts without repeating traces>
 - **Impact/risk:** <who pays and how>
 - **Root cause / plausible explanation:** <observed or labeled as inferred>
 - **Proposed action:** <concrete; this is a proposal, not current state>

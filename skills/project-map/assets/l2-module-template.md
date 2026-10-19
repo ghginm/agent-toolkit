@@ -41,10 +41,11 @@ code that shows the boundary (a function, a registration point, a caller).>
 
 ## Contracts
 - <data shape crossing the boundary: keys/types/units/ordering assumptions; where the schema is defined (path::symbol)>
-- <API/config contract: keys read, defaults, who sets them>
+- <API contract; put configuration behavior in Configuration & tests below>
 
 ## Configuration & tests
-<keys this module reads; test files that cover it. One line each.>
+<config definition/default → override/load → consumer, cited. Test files located;
+assertions/setup inspected and what they test; do not imply execution.>
 
 ## Caveats & invariants
 - <sharp edge: e.g. "assumes rows sorted by (entity, ts) — enforced nowhere but `ingest.py::write_parquet` sorts (cite)"; break here and features silently shift>
@@ -59,5 +60,7 @@ code that shows the boundary (a function, a registration point, a caller).>
 | adding feature F | `src/features/builder.py` + `tests/features/test_builder.py`; check contract with serving (capabilities/<name> if present) |
 | ... | ... |
 
-## Verification (when status is verified-executed)
-- `<command>` → <observed result>, <date>. Covers: <which claims>.
+## Verification
+- Inspection scope: <sections/claims checked; link source traces above instead of repeating them>; not inspected: <boundaries>.
+- Baseline: <revision + date; dirty paths if relevant>. Partial repair: <changed claims + newer baseline; retain older card stamp unless all important claims rechecked>.
+- Executed: `<command>` → <observed result + date + claims exercised, or not run + reason>. Test descriptions and static inspection scope stay in Configuration & tests above.

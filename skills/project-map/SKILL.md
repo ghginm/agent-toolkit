@@ -13,6 +13,12 @@ Maintain a navigable, source-cited map of a repository under `.agent/project-map
 
 The map's cardinal rule: it is a claim about the code at a revision, never the authority on the code. Even a fresh card can be incomplete or wrong — the implementing agent must still read the touched source and its callers.
 
+For **create, update, and validate**, read `references/source-verification.md`
+and apply its claim-driven checklist before publishing current-state claims.
+Inspect current implementation for every important claim you add or revalidate;
+docs, maps, search hits, and checker passes are discovery, not semantic evidence.
+When the budget runs out, narrow coverage instead of weakening verification.
+
 Installing this skill alone does not guarantee routine map consultation. Use appropriate project agent instructions (the L0 pointer below) or explicit skill invocation; discovery and automatic invocation depend on the harness.
 
 ## Audience and optional handoff
@@ -88,7 +94,7 @@ Core discipline — full procedure in `references/workflows.md §1`; follow it w
 
 Recon with a budget (code first, docs as leads) → derive modules by responsibility → write L1 with routing, L2 per substantial module, L3 only with its trigger → every factual claim cited (`path::symbol`), metadata honest → finish with `scripts/map_check.py` clean. The L0 bootstrap snippet is **proposed** to the user (printed), appended to their agent-instructions file only under the permission rules of `references/workflows.md §1` step 6 — the skill never overwrites `AGENTS.md`/`CLAUDE.md` content.
 
-Completion criteria: L1 with routing table; each card has `status`, `verified_revision`, existing `sources`; coverage and known gaps stated in L1; no L3 without trigger; map_check reports zero problems.
+Completion criteria: L1 with routing table; each card has honest metadata and claim-level source verification; coverage, uninspected claims, and known gaps stated; no L3 without trigger; map_check reports zero problems. Report semantic coverage separately from that structural result.
 
 ## route
 
@@ -117,7 +123,7 @@ Incremental and change-driven — a full regeneration per commit defeats the pur
 Two layers, never claiming the second from the first (detail: `references/workflows.md §4`):
 
 1. Mechanical: `scripts/map_check.py` — dead source paths, broken card links, missing/invalid metadata, `module`/`capability` id ≠ filename, uncited L2/L3 cards, `verified_revision` unknown/behind HEAD, dirty files in scope. A clean run means references resolve — nothing about whether claims match behavior.
-2. Semantic: the agent spot-checks sampled cards against current code; discrepancies go through drift recovery. Old cards with a valid SHA get no benefit of the doubt; no invented passes or freshness stamps.
+2. Semantic: the agent checks selected claims against current code using `references/source-verification.md`; discrepancies go through drift recovery. Name sampled cards and claims, and everything not checked. A sample never revalidates a whole card or map. Old cards with a valid SHA get no benefit of the doubt; no invented passes or freshness stamps.
 
 ## Boundaries
 
@@ -129,6 +135,7 @@ Two layers, never claiming the second from the first (detail: `references/workfl
 ## Resources
 
 - `references/map-format.md` — card anatomy and metadata semantics, level-by-level content requirements, anti-patterns. Read before authoring cards.
+- `references/source-verification.md` — mandatory claim checks for create/update/validate, boundary tracing, and honest partial baselines.
 - `references/workflows.md` — full create/update/validate procedures, update-policy table, drift recovery, non-git handling. Read when running `create`, or when `update`/`validate` hits an edge case.
 - `scripts/map_check.py` — deterministic reference & freshness checks (stdlib Python). Use the absolute command above; add `--json` for structured output or the affected-card options in `references/workflows.md §2`. Used by create (finish-line), validate (layer 1), update (candidates).
 - `assets/l1-index-template.md`, `assets/l2-module-template.md`, `assets/l3-capability-template.md`, `assets/bootstrap-snippet.md` — copy-and-fill skeletons for the level being written.

@@ -76,6 +76,17 @@ class CheckReportCase(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("ml.md", r.stdout)
 
+    def test_valid_citation_is_not_implementation_proof(self):
+        # data.py contains only pass, despite the report's scaler-fit claim.
+        # This is intentionally accepted: the checker is structural, not an agent.
+        self.write("index.md", GOOD_INDEX)
+        self.write("architecture.md", GOOD_ARCH)
+        self.write("ml.md", GOOD_ML)
+        self.assertEqual((self.proj / "src/data.py").read_text(),
+                         "def build_dataset():\n    pass\n")
+        r = self.check()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
     def test_summary_tables_and_handoff_references_do_not_duplicate_findings(self):
         summary = """## Executive summary
 The sampled configuration has one significant coupling risk.
@@ -146,6 +157,21 @@ No implementation is proposed.
         r = self.check()
         self.assertEqual(r.returncode, 1)
         self.assertIn("cited path does not exist", r.stdout)
+
+    def test_dot_prefixed_project_citation_preserved(self):
+        card = self.proj / ".agent/project-map/modules/core.md"
+        card.parent.mkdir(parents=True)
+        card.write_text("# Core\n")
+        self.write("index.md", GOOD_INDEX)
+        self.write("architecture.md", GOOD_ARCH
+                   + "\nMap claim: `.agent/project-map/modules/core.md:1`.\n")
+        self.write("ml.md", GOOD_ML)
+        r = self.check()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        card.unlink()
+        r = self.check()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("cited path does not exist: .agent/project-map/modules/core.md", r.stdout)
 
     def test_missing_fields_and_handoff_flagged(self):
         ml = GOOD_ML.replace(

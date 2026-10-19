@@ -104,6 +104,23 @@ not justify semantic claims or mass-refreshing untouched cards. If a sibling
 artifact is missing, proceed from source rather than requiring its skill.
 When changing a shared contract, synchronize all affected skill copies and this table.
 
+Current behavior is established by targeted inspection of implementation, relevant
+callers/consumers, and configuration, not by README text, comments, maps, or prior
+audits. Keep source inspection, existing test assertions, and observed execution
+separate. Scope absence claims to the search and inspected paths; inaccessible
+implementation remains uncertain, including external plugins. No whole-repository
+read or persistent index is required.
+
+Map creation checks the implementation of each documented module; updates trace
+changed contracts into consumers; validation explicitly checks consequential card
+claims against source. Large-map validation may be risk-based, but lists checked
+and unverified cards and preserves uninspected cards' verification metadata.
+Unresolved drift cannot retain a false verified label. The bundled checkers
+validate structure and citation paths, not semantic agreement with code.
+Map refresh does not authorize audit lifecycle writes: marking a finding
+`implemented-verified` is a separate authorized follow-up requiring its specific
+implementation evidence and validation/decisive experiment result.
+
 ## Artifact handoffs and human outputs
 
 | Skill | Audience and purpose | Target-project output |
@@ -161,6 +178,16 @@ External knowledge may inform alternatives, never prove repository behavior.
 Markdown is primary; slides through available dedicated tools or a slide outline
 are optional. Do not generate a full implementation plan or application changes
 as an automatic follow-up. No presentation dependency or workflow framework is added.
+
+Workshop preparation defaults to a short opening/roadmap, compact current-system
+context, architecture-wide choices before dependent component choices, separate
+general engineering practices, then the decision register and missing evidence.
+Use the same compact question/options/trade-offs/decision pattern at both levels;
+give each decision one home and link detail rather than duplicating it. Established
+practices are communicated, proposed rules need agreement, and architecture-specific
+rules stay with their decision. Scale this narrative down for narrow discussions;
+it is not a mandatory six-part meeting schema. Live-code current-state claims need
+source inspection; document-only design remains explicitly not code-verified.
 
 ## Extension invariants
 

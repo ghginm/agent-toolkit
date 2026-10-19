@@ -59,3 +59,8 @@ description routing, packaging mechanics, and generated-document review.
 The scenario-specific results files record actual executed runs with evidence.
 Absence of a scenario from those records means it was NOT run; check the relevant
 record before trusting a capability claim.
+
+Source-verification and discussion-quality regressions use the intentionally
+misdocumented `source-drift` fixture. See [source-verification.md](source-verification.md)
+for prompts and evaluator-only checks, and
+[source-verification-results.md](source-verification-results.md) for executed results.

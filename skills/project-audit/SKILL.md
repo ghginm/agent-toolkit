@@ -77,10 +77,16 @@ Hard rules, because an audit's only value is its trustworthiness:
 - Code, tests, and observable behavior are the source of truth; documentation, comments, and maps are claims to verify.
 - Never invent coverage numbers, test results, findings, or design rationale. Undocumented author intent is *inferred rationale*, distinct from *confirmed rationale* (cite the doc/commit when confirming).
 - Absence claims stay inside the inspected sample and name it.
+- Verify important current-state claims, including sound areas and tier evidence,
+  in current source. Trace boundary callers/consumers and config defaults,
+  overrides, and use sites; declarations alone do not prove active behavior.
+- Separate test existence, assertions inspected (`verified-static`), and commands
+  actually run (`verified-executed`, scoped to observed results). Never promote
+  a whole finding or project to executed evidence from an unrelated smoke test.
 
 ### 4. Analyze per mode
 
-Read the reference for each selected mode and follow its methodology: `ml` findings carry the eight-step reasoning chain defined in `references/ml-methodology.md` §3; exploratory findings follow the evidence discipline in `references/exploratory.md` §3.
+Read `references/source-verification.md` for every run and apply its claim-driven checks before findings or summaries. Then read the reference for each selected mode and follow its methodology: `ml` findings carry the eight-step reasoning chain defined in `references/ml-methodology.md` §3; exploratory findings follow the evidence discipline in `references/exploratory.md` §3. Narrow scope when time is limited; do not substitute docs, map claims, or search hits for reading current implementation.
 
 **Context-sensitivity gate** (canonical here; applies to every recommendation, all modes). Before writing one, answer:
 
@@ -127,6 +133,8 @@ Use the absolute variables established in §1. Replace `20261015-1430-all` with 
 
 Then confirm the judgment items:
 
+- [ ] Important claims have current source support, with caller/config traces where needed; unresolved claims remain `inferred` or watch items, not verified facts.
+- [ ] Test locations, assertions read, actual command results, and unrun paths remain distinct; checker success is structural, not semantic proof.
 - [ ] Coverage section names uninspected areas; no absence claims beyond the sample (§3).
 - [ ] Summaries and glance tables agree with detailed IDs, metadata, and evidence; sound areas have citations and first priorities preserve acceptance/experiment gates (§5).
 - [ ] Every recommendation passed the gate (§4), with trade-offs and a simpler alternative stated.
@@ -138,6 +146,7 @@ Then confirm the judgment items:
 
 Load only what the selected modes need:
 
+- `references/source-verification.md` — required in every mode: claim checks, boundary/config traces, scoped absence claims, and evidence limits.
 - `references/architecture.md` — audit #1: per-tier expectations, inspection areas with concrete probes, recommendation anti-patterns.
 - `references/ml-methodology.md` — audit #2: leakage/splits/metrics probes in code, the reasoning chain, research-gap handling.
 - `references/exploratory.md` — audit #3: cross-cutting probes and anti-speculation discipline.

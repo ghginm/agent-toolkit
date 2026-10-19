@@ -26,7 +26,7 @@ verified_at: <YYYY-MM-DD>
 - CLI/serve/notebook entries as observed in code.
 
 ## Build & test
-- `<command>` — existence verified in `<ci-config/script>`; execution status: <run on <date> / not executed>.
+- `<command>` — defined at `<ci-config/script:line>`; tests/assertions inspected: <scope or not read>; executed: <command + observed result + date, or not run + reason>.
 
 ## Flow
 <3-8 lines: data/control flow end to end, or "request → module A → B → output" bullets.>
@@ -48,4 +48,5 @@ verified against code, not guessed from folders. -->
 ## Coverage & uncertainty
 - Mapped: <modules>. Lightly mapped: <...>. NOT mapped: <areas + why (budget/volatility/user choice)>.
 - Known open drift: <cards flagged stale>.
+- Source checks: <important index claims and paths inspected; caller/config traces; uninspected claims and boundaries>. Structural checker: <result; not semantic proof>.
 - This index reflects revision `<sha>` <(+ dirty tree noted where relevant)>; cards may lag — statuses tell you which were verified when.

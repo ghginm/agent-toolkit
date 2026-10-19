@@ -40,3 +40,8 @@ N. <what leaves, to whom>
 
 ## Related cards
 - Parent: [modules/<parent>.md]; other touchpoints: [<links>]
+
+## Verification
+- Source inspected: <flow claims + callers/config consumers>; not inspected: <paths/boundaries>.
+- Baseline: <revision + date + dirty paths>. Partial repair: <changed claims + newer baseline; retain older card stamp unless all important claims rechecked>.
+- Tests located/read: <paths + assertions inspected, or not read>. Executed: <command + observed result + claims exercised, or not run + reason>.
